@@ -9,7 +9,7 @@ import config
 import traceback
 import time
 from msg_types import *
-from case import CARPCase
+from case import carp_case, ncs_case
 from errors import *
 
 coloredlogs.install(level=config.log_level)
