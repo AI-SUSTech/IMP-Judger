@@ -28,7 +28,7 @@ def id_generator(size=8, chars=string.ascii_letters + string.digits):
 
 
 class NCSCase:
-    def __init__(self, zip_data, cid=0, ctype=msg_types.CARP, dataset=json.loads('{}')):
+    def __init__(self, zip_data, cid=0, ctype=msg_types.NCS, dataset=json.loads('{}')):
         self.cid = cid
         self.ctype = ctype
         self._zipdata = zip_data

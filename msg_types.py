@@ -9,3 +9,4 @@ INVALID = -1
 CARP = 0
 ISE = 1
 IMP = 2
+NCS = 3
