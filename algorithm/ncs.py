@@ -19,6 +19,7 @@ def load_problem(problem_path, dim):
         o = np.asarray(optimal)
     b = 390 # just for problem 6, see fbias_data.txt
     o = o[0:dim]
+    lu = np.asarray([[-100, 100]]* dim)  # D X 2
     return o, A, M, a, alpha, b, lu
 
 
@@ -72,8 +73,9 @@ def ncs(problem_index, filter=True):
     phi_init = 0.00005  # the trade-off parameter between f and d
     eta_m_init = 1  # the step size of gradient descent for mean vector
     eta_c_init = (3 + np.log(D)) / (5 * np.sqrt(D))  # the step size of gradient descent for mean vector
-    vl = np.tile(lu[:, 1], (1, mu))
-    vu = np.tile(lu[:, 2], (1, mu))
+    #  todo this function is to be validate, not the same as repmat in matlab
+    vl = np.tile(lu[:, 0], (1, mu))
+    vu = np.tile(lu[:, 1], (1, mu))
 
     # Configuration of the test protocol
     MAXFES = 10000 * D  # the total FE of each run
@@ -100,11 +102,11 @@ def ncs(problem_index, filter=True):
 
         for i in range(1, _lambda):
             # Model the search process as Gaussian probabilistic distribution
-            sp[i].mean = lu[:, 1] + np.multiply(
+            sp[i].mean = lu[:, 0] + np.multiply(
                 np.random.rand((D, 1)),
-                (lu[:, 2] - lu[:, 1]))
+                (lu[:, 1] - lu[:, 0]))
 
-            sp[i].cov = np.divide((lu[:, 2] - lu[:, 1]), _lambda)
+            sp[i].cov = np.divide((lu[:, 1] - lu[:, 0]), _lambda)
 
         # The main loop body
         while FES < MAXFES:
