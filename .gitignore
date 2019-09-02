@@ -175,3 +175,5 @@ fabric.properties
 *.kate-swp
 
 config.py
+
+.idea/

@@ -208,11 +208,11 @@ class NCSCase:
 
 
         #### Test
-        await asyncio.sleep(60)
+        await asyncio.sleep(10)
 
         timedout = False
-        _stdout = b''
-        _stderr = b''
+        _stdout = b'stupy'
+        _stderr = b'are you ok'
         statuscode = 0
         #### 
 
