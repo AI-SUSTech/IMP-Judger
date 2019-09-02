@@ -235,7 +235,7 @@ class NCSCase:
         stdout = self._stdout.decode('utf8')
         network = self._dataset['network']
         seed_count = self._dataset['seedCount']
-        reason = ''
+        reason = 'stupy'
         result = 0.
         valid = False
         try:

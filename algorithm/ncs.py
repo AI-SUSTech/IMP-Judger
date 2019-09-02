@@ -3,10 +3,22 @@ import numpy as np
 import time
 
 
-def load_problem(problem_path):
+def load_problem(problem_path, dim):
     print("load problem in ", problem_path)
 
     (o, A, M, a, alpha, b, lu) = [None] * 7
+    problem6_opti = "../datasets_ncs/rosenbrock_func_data.txt"
+    with open(problem6_opti, 'r') as f:
+        data = f.readlines()[0].split(" ")
+        optimal = []
+        i = 0
+        for d in data:
+            if d != "":
+                optimal.append(float(d))
+                i += 1
+        o = np.asarray(optimal)
+    b = 390 # just for problem 6, see fbias_data.txt
+    o = o[0:dim]
     return o, A, M, a, alpha, b, lu
 
 
@@ -26,13 +38,33 @@ def repmat(e: Struct, shape):
 
 
 def benchmark_func(x, problem, o, A, M, a, alpha, b):
-    return "implement me"
+    """
+    :param x: the solution that to be judged
+    :param problem: problem index
+    :param o: the optimal solution
+    :param A:
+    :param M:
+    :param a:
+    :param alpha:
+    :param b: f_bias
+    :return:
+    """
+    # only support problem 6
+    dimension, num_sol = x.shape
+    fitness = np.zeros(1, num_sol)
+    for i in range(num_sol):
+        onefitness = b
+        z = x - o + 1
+        for d in range(dimension-1):
+            onefitness += 100*(z[i]**2-z[i+1])**2 + (z[i] - 1)**2
+        fitness[i] = onefitness
+    return fitness
 
 
-def ncs(problem_path, filter=True):
+def ncs(problem_index, filter=True):
     # pre load the data from the problem
     D = 30  # the dimension of the problem
-    o, A, M, a, alpha, b, lu = load_problem(problem_path)
+    o, A, M, a, alpha, b, lu = load_problem(problem_index, D)
 
     # Configuration of NCS
     _lambda = math.ceil(np.log(D))  # the number of search processes
@@ -99,7 +131,7 @@ def ncs(problem_path, filter=True):
                     sp[i].x[pos] = vl[pos]
 
                     # Fitness evalution for mu solutions
-                sp[i].fit = benchmark_func(sp[i].x, problem_path, o, A, M, a, alpha, b)
+                sp[i].fit = benchmark_func(sp[i].x, problem_index, o, A, M, a, alpha, b)
                 FES = FES + mu
 
                 # Update the best solution ever found
@@ -180,15 +212,14 @@ def ncs(problem_path, filter=True):
 
 
 if __name__ == '__main__':
-    problem_set = list(range(6, 25))
+    problem_set = list(range(6, 7))
     for p in problem_set:
-        problem_name = "test_data_func%d" % p
-        print("************the problem %s started!************" % problem_name)
+        print("************the problem %d started!************" % p)
 
         if p == 7 or p == 25:
-            outcome = ncs("../datasets_ncs/%s.txt" % problem_name, False)
+            outcome = ncs(p, False)
         else:
-            outcome = ncs("../datasets_ncs/%s.txt" % problem_name)
+            outcome = ncs(p)
 
-        print('the {} th problem result is:'.format(problem_name))
+        print('the {} th problem result is:'.format(p))
         print('the mean result is: {} and the std is {}'.format((np.mean(outcome)), np.std(outcome)))
