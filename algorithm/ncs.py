@@ -82,11 +82,11 @@ def ncs(problem_index, filter=True):
     total_time = 25  # the total number of runs
 
     # Record the best results for each problem
-    outcome = np.multiply(np.ones(total_time, 1), 1e300)
+    outcome = np.multiply(np.ones(total_time), 1e300)
 
     # Definition of the structure of search processes
-    sp = repmat(
-        Struct(x=np.zeros(D, mu), fit=np.zeros(1, mu), mean=np.zeros(D, 1), cov=np.zeros(D, 1)),
+    sp = np.tile(
+        Struct(x=np.zeros((D, mu)), fit=np.zeros((1, mu)), mean=np.zeros((D, 1)), cov=np.zeros((D, 1))),
         (_lambda, 1)
     )
     current_time = 1
@@ -180,7 +180,7 @@ def ncs(problem_index, filter=True):
                         np.power(
                             (np.power(
                                 np.multiply(
-                                    np.tile(np.power(invCov_i, 2), 1, mu),
+                                    np.tile(np.power(invCov_i, 2), (1, mu)),
                                     difXtoMean
                                 ), 2) - np.tile(invCov_i, reps=(1, mu))),
                             2),
