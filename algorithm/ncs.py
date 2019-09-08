@@ -2,6 +2,9 @@ import math
 import numpy as np
 import time
 
+from algorithm.benchmark import benchmark_func
+from algorithm.problem import load_problem
+
 
 class Struct:
     def __init__(self, x, fit, mean, cov):
@@ -9,40 +12,6 @@ class Struct:
         self.fit = fit
         self.mean = mean
         self.cov = cov
-
-    def __iter__(self):
-        pass
-
-
-class Parameter:
-    def __init__(self, o, A, M, a, alpha, b, lu):
-        self.o = o
-        self.A = A
-        self.M = M
-        self.a = a
-        self.alpha = alpha
-        self.b = b
-        self.lu = lu
-
-
-def load_problem(problem_path, dim):
-    print("load problem in ", problem_path)
-
-    (o, A, M, a, alpha, b, lu) = [None] * 7
-    problem6_opti = "../datasets_ncs/rosenbrock_func_data.txt"
-    with open(problem6_opti, 'r') as f:
-        data = f.readlines()[0].split(" ")
-        optimal = []
-        i = 0
-        for d in data:
-            if d != "":
-                optimal.append(float(d))
-                i += 1
-        o = np.asarray(optimal)
-    b = 390  # just for problem 6, see fbias_data.txt
-    o = o[0:dim]
-    lu = np.asarray([[-100, 100]] * dim)  # D X 2
-    return Parameter(o, A, M, a, alpha, b, lu)
 
 
 def repmat(e, shape):
@@ -52,31 +21,13 @@ def repmat(e, shape):
     return np.asarray(list(map(list, zip(*mat))))
 
 
-def benchmark_func(x, problem, o, A, M, a, alpha, b):
+def ncs(problem_index, filter=True, total_time=25):
     """
-    :param x: the solution that to be judged
-    :param problem: problem index
-    :param o: the optimal solution
-    :param A:
-    :param M:
-    :param a:
-    :param alpha:
-    :param b: f_bias
+    :param problem_index:
+    :param filter: if it is problem 7 or 25
+    :param total_time: the total number of runs
     :return:
     """
-    # only support problem 6
-    dimension, num_sol = x.shape
-    fitness = np.zeros(num_sol)
-    for i in range(num_sol):
-        onefitness = b
-        z = x[:, i] - o + 1
-        for d in range(dimension - 1):
-            onefitness += 100 * (z[i] ** 2 - z[i + 1]) ** 2 + (z[i] - 1) ** 2
-        fitness[i] = onefitness
-    return fitness
-
-
-def ncs(problem_index, filter=True):
     # pre load the data from the problem
     D = 30  # the dimension of the problem
     parameters = load_problem(problem_index, D)
@@ -96,18 +47,18 @@ def ncs(problem_index, filter=True):
 
     # Configuration of the test protocol
     MAXFES = 10000 * D  # the total FE of each run
-    total_time = 25  # the total number of runs
 
     # Record the best results for each problem
     outcome = np.ones(total_time) * 1e300
 
     # Definition of the structure of search processes
     sp = np.asarray(
-        [Struct(
-            x=np.zeros((D, mu)),
-            fit=np.zeros(mu),
-            mean=np.zeros((D, 1)),
-            cov=np.zeros((D, 1)))
+        [
+            Struct(
+                x=np.zeros((D, mu)),
+                fit=np.zeros(mu),
+                mean=np.zeros((D, 1)),
+                cov=np.zeros((D, 1)))
         ] * _lambda
     )
     current_time = 0
@@ -177,8 +128,8 @@ def ncs(problem_index, filter=True):
                     difXtoMean * np.tile(utility, reps=(D, 1)), 1) \
                     .reshape((D, 1))  # w.r.t. mean vector
                 deltaCov_f = np.power(invCov_i, 2) * np.mean(
-                    np.power(difXtoMean, 2) * np.tile(utility, reps=(D, 1)), 1)\
-                             .reshape((-1, 1))/ 2  # w.r.t. covariance matrix
+                    np.power(difXtoMean, 2) * np.tile(utility, reps=(D, 1)), 1) \
+                    .reshape((-1, 1)) / 2  # w.r.t. covariance matrix
                 # Calculate the gradients of distribution distances
                 deltaMean_d = np.zeros((D, 1))  # w.r.t. mean vector
                 deltaCov_d = np.zeros((D, 1))  # w.r.t. covariance matrix
@@ -227,7 +178,7 @@ def ncs(problem_index, filter=True):
                     # sp[i].mean[pos] = lu[pos][0]
 
         # Print the best solution ever found to the screen
-        print('The best result at the {} th FE is {} current time: {}'.format(FES, min_f, current_time))
+        print('current time: {}, The best result at the {} th FE is {} '.format(current_time, FES, min_f))
         outcome[current_time] = min_f
         current_time = current_time + 1
 
@@ -235,14 +186,15 @@ def ncs(problem_index, filter=True):
 
 
 if __name__ == '__main__':
-    problem_set = list(range(6, 7))
+    problem_set = [12, 6]
     for p in problem_set:
-        print("************the problem %d started!************" % p)
-
+        print("\n************the problem %d started!************\n" % p)
+        start = time.time()
         if p == 7 or p == 25:
             outcome = ncs(p, False)
         else:
             outcome = ncs(p)
 
+        print('the {} th problem cost: {}'.format(p, time.time()-start))
         print('the {} th problem result is:'.format(p))
         print('the mean result is: {} and the std is {}'.format((np.mean(outcome)), np.std(outcome)))
