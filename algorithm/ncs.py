@@ -110,9 +110,9 @@ def ncs(problem_index, filter=True):
             cov=np.zeros((D, 1)))
         ] * _lambda
     )
-    current_time = 1
+    current_time = 0
 
-    while current_time <= total_time:
+    while current_time < total_time:
 
         # Set the randomness seed
         np.random.seed(int(time.time()))
@@ -208,15 +208,26 @@ def ncs(problem_index, filter=True):
                 # problem != 7 and problem != 25:
                 if filter:
                     # todo < in matlab is different in python
-                    pos = sp[i].mean < lu[:, 0].reshape((-1, 1))
-                    sp[i].mean[pos] = np.multiply(2, lu[pos, 0]) - sp[i].mean[pos]
-                    pos = sp[i].mean > lu[:, 1].reshape((-1, 1))
-                    sp[i].mean[pos] = np.multiply(2, lu[pos, 1]) - sp[i].mean[pos]
-                    pos = sp[i].mean < lu[:, 0].reshape((-1, 1))
-                    sp[i].mean[pos] = lu[pos][0]
+                    for ind in range(lu.shape[0]):
+                        if sp[i].mean[ind] < lu[ind][0]:
+                            sp[i].mean[ind] = 2 * lu[ind][0] - sp[i].mean[ind]
+                    for ind in range(lu.shape[0]):
+                        if sp[i].mean[ind] > lu[ind][1]:
+                            sp[i].mean[ind] = 2 * lu[ind][1] - sp[i].mean[ind]
+
+                    for ind in range(lu.shape[0]):
+                        if sp[i].mean[ind] < lu[ind][0]:
+                            sp[i].mean[ind] = lu[ind][0]
+
+                    # pos = sp[i].mean < lu[:, 0].reshape((-1, 1))
+                    # sp[i].mean[pos] = np.multiply(2, lu[pos, 0]) - sp[i].mean[pos]
+                    # pos = sp[i].mean > lu[:, 1].reshape((-1, 1))
+                    # sp[i].mean[pos] = np.multiply(2, lu[pos, 1]) - sp[i].mean[pos]
+                    # pos = sp[i].mean < lu[:, 0].reshape((-1, 1))
+                    # sp[i].mean[pos] = lu[pos][0]
 
         # Print the best solution ever found to the screen
-        print('The best result at the {} th FE is {}'.format(FES, min_f))
+        print('The best result at the {} th FE is {} current time: {}'.format(FES, min_f, current_time))
         outcome[current_time] = min_f
         current_time = current_time + 1
 
