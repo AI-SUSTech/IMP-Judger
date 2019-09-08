@@ -186,9 +186,9 @@ def ncs(problem_index, filter=True, total_time=25):
 
 
 if __name__ == '__main__':
-    problem_set = [12, 6]
+    problem_set = [6, 12]
     for p in problem_set:
-        print("\n************the problem %d started!************\n" % p)
+        print("\n************ the problem %d started! ************\n" % p)
         start = time.time()
         if p == 7 or p == 25:
             outcome = ncs(p, False)

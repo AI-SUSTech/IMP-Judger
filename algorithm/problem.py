@@ -2,8 +2,8 @@ import numpy as np
 from algorithm.problem_setup import load_parameter
 
 
-def load_problem(problem_path, dim):
-    save_path = "../datasets_ncs/format/function%d.rw" % problem_path
+def load_problem(problem_index, dim):
+    save_path = "../datasets_ncs/format/function%d.rw" % problem_index
     p = load_parameter(save_path)
     if p.o is not None:
         p.o = p.o[0:dim]
