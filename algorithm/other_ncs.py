@@ -29,14 +29,31 @@ class NCS:
         # self.pop[0,:] = parameters.init_value
         # the same init values
         # self.pop = np.ones([parameters.popsize, self.n])*0.1
-        if parameters.has_key('init_pop'):
+        if hasattr(parameters, 'init_pop') and parameters.init_pop is not None:
             self.pop = np.tile(parameters.init_pop, (parameters.popsize, 1))[:parameters.popsize, :]
         else:
             self.pop = np.tile(self.init_value, (parameters.popsize, 1))
         if parameters.reset_xl_to_pop:
             self.xl = self.pop
 
-    def set_initFitness(self, fitness, sigma=None):
+        self.bestpop = None
+        self.min_f = None
+
+        self.r = 0.99
+        self.flag = np.zeros([self.popsize, 1])
+        self.epoch = self.popsize
+        self.lambda_ = np.ones([self.popsize, 1])
+        self.lambda_sigma = 0.1
+        self.lambda_range = self.lambda_sigma
+        self.FES = self.popsize
+        self.Gen = 0
+        # record best
+        self.k_min_f[0, 0] = self.min_f
+        self.sigma = np.ones([self.popsize, self.n]) * self.stepsize
+
+
+
+    def set_initFitness(self, fitness, sigma=None, r=0.99):
         arg_min = np.argmin(fitness)
         self.min_f = fitness[arg_min]
         self.bestpop = self.pop[arg_min, :]
@@ -45,10 +62,10 @@ class NCS:
             self.sigma = np.ones([self.popsize, self.n]) * self.stepsize
         else:
             self.sigma = np.tile(sigma, (self.popsize, 1))
-        self.r = 0.99
+        self.r = r
         self.fit = np.array(fitness)
         self.flag = np.zeros([self.popsize, 1])
-        self.epoch = self.popsize
+        # self.epoch = self.popsize
         self.lambda_ = np.ones([self.popsize, 1])
         self.lambda_sigma = 0.1
         self.lambda_range = self.lambda_sigma

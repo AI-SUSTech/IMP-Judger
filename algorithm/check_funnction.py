@@ -23,7 +23,7 @@ def test_func(problem_index):
     file_path = "../datasets_ncs/test_data_func{}.txt".format(problem_index)
     x, v = load_test_data(file_path)
     para = load_problem(problem_index, 50)
-    res = benchmark_func(x, problem_index, para.o, para.A, para.M, para.a, para.alpha, para.b)
+    res = benchmark_func(x, problem_index, para)
     return v, res
 
 

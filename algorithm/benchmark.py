@@ -1,12 +1,18 @@
 import numpy as np
 
 
-def benchmark_func(x, problem, o, A, M, a, alpha, b):
+def benchmark_func(x, problem, parameter):
     """
     :type problem: int
     """
     if problem < 0 or problem >= len(func_list):
         raise ValueError("none exist problem")
+    o = parameter.o
+    A = parameter.A
+    M = parameter.M
+    a = parameter.a
+    alpha = parameter.alpha
+    b = parameter.b
     return func_list[problem](x, o, A, M, a, alpha, b)
 
 
