@@ -48,19 +48,16 @@ def ncs(problem_index, filter=True, total_time=25):
     # Configuration of the test protocol
     MAXFES = 10000 * D  # the total FE of each run
 
-    # Record the best results for each problem
+    # Record the best results for eachnp.mean( problem
     outcome = np.ones(total_time) * 1e300
 
     # Definition of the structure of search processes
-    sp = np.asarray(
-        [
-            Struct(
-                x=np.zeros((D, mu)),
-                fit=np.zeros(mu),
-                mean=np.zeros((D, 1)),
-                cov=np.zeros((D, 1)))
-        ] * _lambda
-    )
+    sp = [
+        Struct(
+        x=parameters.o,  # np.zeros((D, mu)),
+        fit=np.zeros(mu),
+        mean=np.zeros((D, 1)),
+        cov=np.zeros((D, 1))) for _ in range(_lambda)]
     current_time = 0
 
     while current_time < total_time:
@@ -72,7 +69,7 @@ def ncs(problem_index, filter=True, total_time=25):
         min_f = 1e300
         FES = 0
 
-        for i in range(1, _lambda):
+        for i in range(0, _lambda):
             # Model the search process as Gaussian probabilistic distribution
             sp[i].mean = lu[:, 0].reshape((-1, 1)) + np.random.rand(D, 1) * (lu[:, 1] - lu[:, 0]).reshape((-1, 1))
             sp[i].cov = (lu[:, 1] - lu[:, 0]).reshape((-1, 1)) / _lambda
@@ -83,9 +80,10 @@ def ncs(problem_index, filter=True, total_time=25):
             eta_m = eta_m_init * ((math.exp(1) - math.exp(FES / MAXFES)) / (math.exp(1) - 1))
             eta_c = eta_c_init * ((math.exp(1) - math.exp(FES / MAXFES)) / (math.exp(1) - 1))
 
-            for i in range(1, _lambda):
+            for i in range(0, _lambda):
                 # Generate mu solutions for each search process
-                sp[i].x = np.tile(sp[i].mean, (1, mu)) + np.random.normal(size=(D, mu)) * (np.tile(sp[i].cov, (1, mu)))
+                sp[i].x = np.tile(sp[i].mean, (1, mu)) + np.random.normal(0, 1, size=(D, mu)) * (
+                    np.tile(sp[i].cov, (1, mu)))
                 # Boundary checking and repairing
                 # problem != 7 and problem != 25:
                 if filter:
@@ -109,7 +107,10 @@ def ncs(problem_index, filter=True, total_time=25):
                 FES = FES + mu
 
                 # Update the best solution ever found
-                min_f = min(min(sp[i].fit), min_f)
+                temp_min_f = min(sp[i].fit)
+                if temp_min_f < min_f:
+                    min_f = temp_min_f
+                    print("curr min_f", min_f, FES, "/", MAXFES)
 
                 # Rank mu solutions ascendingly in terms of fitness
                 order = np.argsort(sp[i].fit)
@@ -125,57 +126,56 @@ def ncs(problem_index, filter=True, total_time=25):
 
                 # Calculate the gradients of expectation of fitness values    
                 deltaMean_f = invCov_i * np.mean(
-                    difXtoMean * np.tile(utility, reps=(D, 1)), 1) \
-                    .reshape((D, 1))  # w.r.t. mean vector
+                    difXtoMean * np.tile(utility, reps=(D, 1)), 1).reshape((D, 1))  # w.r.t. mean vector
                 deltaCov_f = np.power(invCov_i, 2) * np.mean(
-                    np.power(difXtoMean, 2) * np.tile(utility, reps=(D, 1)), 1) \
-                    .reshape((-1, 1)) / 2  # w.r.t. covariance matrix
+                    np.power(difXtoMean, 2) * np.tile(utility, reps=(D, 1)), 1).reshape(
+                    (-1, 1)) / 2  # w.r.t. covariance matrix
+
                 # Calculate the gradients of distribution distances
                 deltaMean_d = np.zeros((D, 1))  # w.r.t. mean vector
                 deltaCov_d = np.zeros((D, 1))  # w.r.t. covariance matrix
-                for j in range(1, _lambda):
-                    temp1 = np.divide(np.divide(1, (sp[i].cov + sp[j].cov)), 2)
-                    temp2 = np.multiply(temp1, (sp[i].mean - sp[j].mean))
+                for j in range(0, _lambda):
+                    temp1 = np.divide(1, (sp[i].cov + sp[j].cov)) / 2
+                    temp2 = temp1 * (sp[i].mean - sp[j].mean)
                     deltaMean_d = deltaMean_d + np.divide(temp2, 4)
-                    deltaCov_d = deltaCov_d + np.divide((temp1 - np.divide(np.power(temp2, 2), 4) - invCov_i), 4)
+                    deltaCov_d = deltaCov_d + (temp1 - np.power(temp2, 2) / 4 - invCov_i) / 4
 
                 # Calculate the Fisher information
-                meanFisher = np.multiply(np.power(invCov_i, 2),
-                                         np.mean(np.power(difXtoMean, 2), 1).reshape((-1, 1)))  # w.r.t. mean vector
+                meanFisher = np.power(invCov_i, 2) * np.mean(np.power(difXtoMean, 2), 1).reshape(
+                    (-1, 1))  # w.r.t. mean vector
                 covFisher = np.mean(
                     np.tile(np.power(invCov_i, 2), (1, mu)) * np.power(difXtoMean, 2)
                     - np.power(np.tile(invCov_i, reps=(1, mu)), 2),
                     1) / 4  # w.r.t. covariance matrix
 
                 # Update the probilistic model of the search process
-                sp[i].mean = sp[i].mean + np.multiply(
-                    np.divide(1, meanFisher),
-                    (deltaMean_f + deltaMean_d * phi_init)) * eta_m  # w.r.t. mean vector
-                sp[i].cov = sp[i].cov + np.multiply(
-                    np.divide(1, covFisher).reshape((-1, 1)),
-                    (deltaCov_f + np.multiply(deltaCov_d, phi_init))
-                ) * eta_c  # w.r.t. covariance matrix
+                sp[i].mean = sp[i].mean + np.divide(1, meanFisher) * (
+                        deltaMean_f + deltaMean_d * phi_init) * eta_m  # w.r.t. mean vector
+                # w.r.t. covariance matrix
+                sp[i].cov = sp[i].cov + np.divide(1, covFisher).reshape((-1, 1)) * (
+                        deltaCov_f + deltaCov_d * phi_init) * eta_c
+
                 # Boundary checking and repairing for mean vectors
                 # problem != 7 and problem != 25:
                 if filter:
                     # todo < in matlab is different in python
-                    for ind in range(lu.shape[0]):
-                        if sp[i].mean[ind] < lu[ind][0]:
-                            sp[i].mean[ind] = 2 * lu[ind][0] - sp[i].mean[ind]
-                    for ind in range(lu.shape[0]):
-                        if sp[i].mean[ind] > lu[ind][1]:
-                            sp[i].mean[ind] = 2 * lu[ind][1] - sp[i].mean[ind]
+                    # for ind in range(lu.shape[0]):
+                    #     if sp[i].mean[ind] < lu[ind][0]:
+                    #         sp[i].mean[ind] = 2 * lu[ind][0] - sp[i].mean[ind]
+                    # for ind in range(lu.shape[0]):
+                    #     if sp[i].mean[ind] > lu[ind][1]:
+                    #         sp[i].mean[ind] = 2 * lu[ind][1] - sp[i].mean[ind]
+                    #
+                    # for ind in range(lu.shape[0]):
+                    #     if sp[i].mean[ind] < lu[ind][0]:
+                    #         sp[i].mean[ind] = lu[ind][0]
 
-                    for ind in range(lu.shape[0]):
-                        if sp[i].mean[ind] < lu[ind][0]:
-                            sp[i].mean[ind] = lu[ind][0]
-
-                    # pos = sp[i].mean < lu[:, 0].reshape((-1, 1))
-                    # sp[i].mean[pos] = np.multiply(2, lu[pos, 0]) - sp[i].mean[pos]
-                    # pos = sp[i].mean > lu[:, 1].reshape((-1, 1))
-                    # sp[i].mean[pos] = np.multiply(2, lu[pos, 1]) - sp[i].mean[pos]
-                    # pos = sp[i].mean < lu[:, 0].reshape((-1, 1))
-                    # sp[i].mean[pos] = lu[pos][0]
+                    pos = sp[i].mean < lu[:, 0].reshape((-1, 1))
+                    sp[i].mean[pos] = 2 * lu[:, 0].reshape((-1, 1))[pos] - sp[i].mean[pos]
+                    pos = sp[i].mean > lu[:, 1].reshape((-1, 1))
+                    sp[i].mean[pos] = 2 * lu[:, 1].reshape((-1, 1))[pos] - sp[i].mean[pos]
+                    pos = sp[i].mean < lu[:, 0].reshape((-1, 1))
+                    sp[i].mean[pos] = lu[:, 0].reshape((-1, 1))[pos]
 
         # Print the best solution ever found to the screen
         print('current time: {}, The best result at the {} th FE is {} '.format(current_time, FES, min_f))
@@ -195,6 +195,6 @@ if __name__ == '__main__':
         else:
             outcome = ncs(p)
 
-        print('the {} th problem cost: {}'.format(p, time.time()-start))
+        print('the {} th problem cost: {}'.format(p, time.time() - start))
         print('the {} th problem result is:'.format(p))
         print('the mean result is: {} and the std is {}'.format((np.mean(outcome)), np.std(outcome)))

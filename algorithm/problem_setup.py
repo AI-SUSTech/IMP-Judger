@@ -12,6 +12,8 @@ def save_parameter(para, file_name):
 def load_parameter(file_name) -> Parameter:
     with open(file_name, 'rb') as file:
         para = pickle.loads(file.read())
+    if para is Parameter:
+        raise ValueError("not parameter type")
     return para
 
 
