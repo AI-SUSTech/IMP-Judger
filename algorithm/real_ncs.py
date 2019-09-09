@@ -1,12 +1,9 @@
 import time
-from collections import namedtuple
-
 import numpy as np
 
 from algorithm.benchmark import benchmark_func
 from algorithm.problem import load_problem
-
-SuperParameter = namedtuple("SuperParameter", ['Tmax', 'sigma', 'r', 'epoch', 'N'])
+from algorithm import *
 
 """
 I was crashed!!!
@@ -20,13 +17,6 @@ class ProblemResult:
         self.newX = None
         self.newFit = None
         self.newCorr = None
-
-
-def repmat(e, shape):
-    mat = e
-    for s in shape:
-        mat = [mat] * s
-    return np.asarray(list(map(list, zip(*mat))))
 
 
 def ncs(problem, para: SuperParameter, filter=True):
@@ -55,8 +45,8 @@ def ncs(problem, para: SuperParameter, filter=True):
     sigma = [para.sigma*abs(parameters.lu[0][1]-parameters.lu[0][0])] * N
 
     lu = parameters.lu
-    vl = repmat(lu[:, 0], (mu,))  # D x mu
-    vu = repmat(lu[:, 1], (mu,))
+    vl = np.tile(lu[:, 0].reshape((-1, 1)), (1, mu))
+    vu = np.tile(lu[:, 1].reshape((-1, 1)), (1, mu))
 
     # Definition of the structure of search processes
     sp = [
@@ -142,7 +132,7 @@ def ncs(problem, para: SuperParameter, filter=True):
             if min_temp < min_f:
                 min_f = min_temp
                 bestS = sp[i].newX
-                print("best %.2f (%.2f, %.2f) time: %d" % (min_f, bestS.max(), bestS.min(), t))
+                print("best 1e%.2f (%.2f, %.2f) time: %d" % (np.log(min_f), bestS.max(), bestS.min(), t))
 
             # normalize
             newFit = np.mean(sp[i].newFit) / (np.mean(sp[i].newFit) + np.mean(sp[i].fit))
