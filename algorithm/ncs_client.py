@@ -3,8 +3,8 @@ from collections import namedtuple
 import numpy as np
 
 from algorithm.other_ncs import NCS
-from algorithm.benchmark import benchmark_func
-from algorithm.problem import load_problem
+from algorithm_ncs.benchmark import benchmark_func
+from algorithm_ncs.problem import load_problem
 
 SuperNCSParameter = namedtuple("SuperNCSParameter",
                                ['init_value',
@@ -36,6 +36,7 @@ if __name__ == '__main__':
         es = NCS(ncs_para)
         es.set_initFitness(fitness=np.tile(fitness, reps=(ncs_para.popsize)), sigma=sigma, r=0.99)
         es.epoch = 10
+        np.random.seed(1)
         # evolution loop
         while not es.stop():
             x = es.ask()
@@ -44,7 +45,7 @@ if __name__ == '__main__':
             es.tell(x, fit)
             es.disp(1000)
 
-        print('the {} th problem result is:'.format(p))
+        print('the {} th problem result is:'.format(es.result()[1]))
         # print('the mean result is: {} and the std is {}'.format((np.mean(outcome)), np.std(outcome)))
 
 

@@ -1,0 +1,139 @@
+import time
+from collections import namedtuple
+
+import numpy as np
+
+import algorithm_ncs.problem as ncs_problem
+import algorithm_ncs.benchmark as benchmark
+
+NCS_CParameter = namedtuple("NCS_CParameter", ["tmax", "sigma", "r", "epoch", "N"])
+
+
+class NCS_C(object):
+
+    def __init__(self, para: NCS_CParameter, problem):
+        self.Tmax = para.tmax
+        self.sigma = para.sigma
+        self.r = para.r
+        self.epoch = para.epoch
+        self.N = para.N  # pop size
+        self.problem_index = problem
+        self.Dimension = 30
+        self.problem_para = ncs_problem.load_problem(problem, self.Dimension)
+        self.result = 390
+
+    def loop(self, total_time=1):
+        np.random.seed(int(100 * time.clock()))
+        # initial the main population
+        p = np.tile(self.problem_para.lu[0, :], (self.N, 1)) + \
+            np.random.random((self.N, self.Dimension)) * \
+            np.tile(self.problem_para.lu[1, :] - self.problem_para.lu[0, :], (self.N, 1))
+
+        fit = benchmark.benchmark_func(p, self.problem_index, self.problem_para)
+        min_fit = min(fit)
+        sigma = np.tile((self.problem_para.lu[1] - self.problem_para.lu[0]) / self.N, (self.N, 1))
+        flag = np.zeros((self.N, 1))
+        _lambda = np.ones((self.N, 1))
+        _lambda_sigma = 0.1
+        _lambda_range = _lambda_sigma
+
+        # Record the number of function evaluations(FES)
+        FES = self.N
+        Gen = 0
+
+        while FES < self.Dimension * self.Tmax:
+            # generate a set of new trial individuals
+            uSet = p + sigma * np.random.normal(size=(self.N, self.Dimension))
+
+            # check the boundary constraints
+            xl = np.tile(self.problem_para.lu[0], (self.N, 1))
+            xu = np.tile(self.problem_para.lu[1], (self.N, 1))
+
+            # let value of uSet less than xl to be 2*xl-uSet
+            pos = uSet < xl
+            uSet[pos] = 2. * xl[pos] - uSet[pos]
+            pos_ = np.where(pos)
+            for i in range(len(pos_[0])):
+                if uSet[pos_[0][i]][pos_[1][i]] > xu[pos_[0][i]][pos_[1][i]]:
+                    uSet[pos_[0][i]][pos_[1][i]] = xu[pos_[0][i]][pos_[1][i]]
+
+            pos = uSet > xu
+            uSet[pos] = 2. * xu[pos] - uSet[pos]
+            pos_ = np.where(pos)
+            for i in range(len(pos_[0])):
+                if uSet[pos_[0][i]][pos_[1][i]] < xl[pos_[0][i]][pos_[1][i]]:
+                    uSet[pos_[0][i]][pos_[1][i]] = xl[pos_[0][i]][pos_[1][i]]
+
+            # Evaluate the trial vectors
+            fitSet = benchmark.benchmark_func(uSet, self.problem_index, self.problem_para)
+            FES = FES + self.N
+            Gen = Gen + 1
+            temp_min_f = min(min(fitSet), min_fit)
+            if temp_min_f != min_fit:
+                min_fit = temp_min_f
+                print('the best result at the', Gen, 'th iteration is', min_fit)
+
+            tempFit = fit - min_fit
+            tempTrialFit = fitSet - min_fit
+            normFit = tempFit / (tempFit + tempTrialFit)
+            normTrialFit = tempTrialFit / (tempFit + tempTrialFit)
+
+            # calculate the Bhattacharyya distance
+            pCorr = 1e300 * np.ones((self.N, self.N))
+            trialCorr = 1e300 * np.ones((self.N, self.N))
+
+            for i in range(self.N):
+                for j in range(self.N):
+                    if j != i:
+                        # BD between the ith parent and the other parents
+                        m1 = p[i, :] - p[j, :]
+                        c1 = (sigma[i, :] ** 2 + sigma[j, :] ** 2) / 2
+                        tempD = 0
+                        for k in range(self.N):
+                            tempD = tempD + np.log(c1[k]) - \
+                                    0.5 * (np.log(sigma[i][k] ** 2) + np.log(sigma[j][k] ** 2))
+                        pCorr[i, j] = np.dot(np.dot(1 / 8 * m1, np.diag(1. / c1)), m1) + 1 / 2 * tempD
+                        # BD between the ith offspring and the other parents
+                        m2 = uSet[i, :] - p[j, :]
+                        trialCorr[i, j] = np.dot(np.dot(1 / 8 * m2, np.diag(1. / c1)), m2) + 1 / 2 * tempD
+
+            pMinCorr = np.min(pCorr, 1)
+            trialMinCorr = np.min(trialCorr, 1)
+
+            #  normalize correlation values
+            normCorr = pMinCorr / (pMinCorr + trialMinCorr)
+            normTrialCorr = trialMinCorr / (pMinCorr + trialMinCorr)
+            _lambda = 1 + _lambda_sigma * np.random.normal(size=(self.N))
+            _lambda_sigma = _lambda_range - _lambda_range * Gen / (self.Dimension * self.Tmax / self.N)
+            pos = (_lambda * normTrialCorr > normTrialFit)
+            p[pos, :] = uSet[pos, :]
+            fit[pos] = fitSet[pos]
+            flag[pos] = flag[pos] + 1
+
+            # i/5 successful rule
+            if Gen % self.epoch == 0:
+                for i in range(self.N):
+                    if flag[i] / self.epoch > 0.2:
+                        sigma[i, :] = sigma[i, :] / self.r
+                    elif flag[i] / self.epoch < 0.2:
+                        sigma[i,:] = sigma[i,:] * self.r
+                flag = np.zeros((self.N, 1))
+
+        self.result = min_fit
+        return min_fit
+
+    def get_result(self):
+        return self.result
+
+
+if __name__ == '__main__':
+    problem_set = [12, ]
+    for p in problem_set:
+        print("\n************ the problem %d started! ************\n" % p)
+        start = time.time()
+        ncs_para = NCS_CParameter(tmax=10000, sigma=1, r=0.99, epoch=10, N=10)
+        ncs_c = NCS_C(ncs_para, p)
+        ncs_c.loop()
+        print('the {} th problem result is: {}'.format(p, ncs_c.get_result()))
+        print('the {} th problem cost time: {}'.format(p, time.time()-start))
+

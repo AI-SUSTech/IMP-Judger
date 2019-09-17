@@ -1,8 +1,8 @@
 import numpy as np
-from algorithm.problem_setup import load_parameter
+from algorithm_ncs.problem_setup import load_parameter
 
 
-def load_problem(problem_index, dim):
+def load_problem(problem_index, dim=30):
     save_path = "../datasets_ncs/format/function%d.rw" % problem_index
     p = load_parameter(save_path)
     if p.o is not None:
@@ -17,5 +17,5 @@ def load_problem(problem_index, dim):
     if p.alpha is not None:
         p.alpha = p.alpha[0:dim]
 
-    p.lu = np.asarray([p.lu] * dim)  # D X 2
+    p.lu = np.asarray([p.lu] * dim).transpose()  # D X 2
     return p

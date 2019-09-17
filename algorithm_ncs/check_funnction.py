@@ -1,7 +1,7 @@
 import numpy as np
 import unittest
-from algorithm.benchmark import benchmark_func
-from algorithm.problem import load_problem
+from algorithm_ncs.benchmark import benchmark_func
+from algorithm_ncs.problem import load_problem
 
 
 def load_test_data(file_path):
@@ -14,7 +14,7 @@ def load_test_data(file_path):
                 if d != "":
                     line.append(float(d))
             lines.append(line)
-    x = np.asarray(lines[0:10]).transpose()
+    x = np.asarray(lines[0:10])
     v = np.asarray(lines[10:]).reshape(10)
     return x, v
 

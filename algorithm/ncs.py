@@ -2,8 +2,8 @@ import math
 import numpy as np
 import time
 
-from algorithm.benchmark import benchmark_func
-from algorithm.problem import load_problem
+from algorithm_ncs.benchmark import benchmark_func
+from algorithm_ncs.problem import load_problem
 from algorithm import *
 
 
