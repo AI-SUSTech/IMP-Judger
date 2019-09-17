@@ -1,7 +1,3 @@
-from collections import namedtuple
-
-
-SuperParameter = namedtuple("SuperParameter", ['Tmax', 'sigma', 'r', 'epoch', 'N'])
 
 class Parameter:
     def __init__(self, o, A, M, a, alpha, b, lu):

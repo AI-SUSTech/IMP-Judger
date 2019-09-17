@@ -1,7 +1,6 @@
 import pickle
 import numpy as np
-from algorithm import *
-
+from algorithm_ncs import *
 
 def save_parameter(para, file_name):
     with open(file_name, 'wb') as file_saver:
@@ -9,10 +8,10 @@ def save_parameter(para, file_name):
         file_saver.write(data)
 
 
-def load_parameter(file_name) -> Parameter:
+def load_parameter(file_name) :
     with open(file_name, 'rb') as file:
         para = pickle.loads(file.read())
-    if para is Parameter:
+    if para is emptyPara:
         raise ValueError("not parameter type")
     return para
 

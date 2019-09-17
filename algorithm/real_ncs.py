@@ -3,7 +3,7 @@ import numpy as np
 
 from algorithm_ncs.benchmark import benchmark_func
 from algorithm_ncs.problem import load_problem
-from algorithm import *
+from algorithm_ncs import *
 
 """
 I was crashed!!!

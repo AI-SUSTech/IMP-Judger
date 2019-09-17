@@ -2,7 +2,7 @@ from collections import namedtuple
 
 import numpy as np
 
-from algorithm.other_ncs import NCS
+from algorithm_ncs import NCS
 from algorithm_ncs.benchmark import benchmark_func
 from algorithm_ncs.problem import load_problem
 
