@@ -41,13 +41,13 @@ class NCS_C(object):
         FES = self.N
         Gen = 0
 
+        # use to check the boundary constraints
+        xl = np.tile(self.problem_para.lu[0], (self.N, 1))
+        xu = np.tile(self.problem_para.lu[1], (self.N, 1))
+
         while FES < self.Dimension * self.Tmax:
             # generate a set of new trial individuals
             uSet = p + sigma * np.random.normal(size=(self.N, self.Dimension))
-
-            # check the boundary constraints
-            xl = np.tile(self.problem_para.lu[0], (self.N, 1))
-            xu = np.tile(self.problem_para.lu[1], (self.N, 1))
 
             # let value of uSet less than xl to be 2*xl-uSet
             pos = uSet < xl
@@ -68,7 +68,7 @@ class NCS_C(object):
             fitSet = benchmark.benchmark_func(uSet, self.problem_index, self.problem_para)
             FES = FES + self.N
             Gen = Gen + 1
-            temp_min_f = min(min(fitSet), min_fit)
+            temp_min_f = min(fitSet.min(), min_fit)
             if temp_min_f != min_fit:
                 min_fit = temp_min_f
                 print('the best result at the', Gen, 'th iteration is', min_fit)
@@ -79,8 +79,8 @@ class NCS_C(object):
             normTrialFit = tempTrialFit / (tempFit + tempTrialFit)
 
             # calculate the Bhattacharyya distance
-            pCorr = 1e300 * np.ones((self.N, self.N))
-            trialCorr = 1e300 * np.ones((self.N, self.N))
+            pCorr = np.full((self.N, self.N), 1e300)
+            trialCorr = np.full((self.N, self.N), 1e300)
 
             for i in range(self.N):
                 for j in range(self.N):
@@ -88,14 +88,21 @@ class NCS_C(object):
                         # BD between the ith parent and the other parents
                         m1 = p[i, :] - p[j, :]
                         c1 = (sigma[i, :] ** 2 + sigma[j, :] ** 2) / 2
-                        tempD = 0
-                        for k in range(self.N):
-                            tempD = tempD + np.log(c1[k]) - \
-                                    0.5 * (np.log(sigma[i][k] ** 2) + np.log(sigma[j][k] ** 2))
-                        pCorr[i, j] = np.dot(np.dot(1 / 8 * m1, np.diag(1. / c1)), m1) + 1 / 2 * tempD
+                        # tempD = 0
+                        # for k in range(self.N):
+                        #     tempD = tempD + np.log(c1[k]) - \
+                        #             0.5 * (np.log(sigma[i][k] ** 2) + np.log(sigma[j][k] ** 2))
+
+                        smart_tempD = np.log(c1).sum() - \
+                                0.5 * np.log(sigma[i] ** 2).sum() + np.log(sigma[j] ** 2).sum()
+                        tempD = smart_tempD
+
+                        pCorr[i, j] = np.dot(1 / 8 * m1 / c1, m1) + 1 / 2 * tempD
+                        # pCorr[i, j] = np.dot(np.dot(1 / 8 * m1, np.diag(1. / c1)), m1) + 1 / 2 * tempD
                         # BD between the ith offspring and the other parents
                         m2 = uSet[i, :] - p[j, :]
-                        trialCorr[i, j] = np.dot(np.dot(1 / 8 * m2, np.diag(1. / c1)), m2) + 1 / 2 * tempD
+                        # trialCorr[i, j] = np.dot(np.dot(1 / 8 * m2, np.diag(1. / c1)), m2) + 1 / 2 * tempD
+                        trialCorr[i, j] = np.dot(1 / 8 * m2 / c1, m2) + 1 / 2 * tempD
 
             pMinCorr = np.min(pCorr, 1)
             trialMinCorr = np.min(trialCorr, 1)
@@ -127,7 +134,7 @@ class NCS_C(object):
 
 
 if __name__ == '__main__':
-    problem_set = [6, ]
+    problem_set = [6, 12]
     for p in problem_set:
         print("\n************ the problem %d started! ************\n" % p)
         start = time.time()
