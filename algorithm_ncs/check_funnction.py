@@ -1,4 +1,4 @@
-import numpy as np
+import minpy.numpy as np
 import unittest
 from algorithm_ncs.benchmark import benchmark_func
 from algorithm_ncs.problem import load_problem

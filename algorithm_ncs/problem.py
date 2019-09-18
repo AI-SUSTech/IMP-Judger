@@ -1,9 +1,9 @@
-import numpy as np
+import minpy.numpy as np
 from algorithm_ncs.problem_setup import load_parameter
 
 
 def load_problem(problem_index, dim=30):
-    save_path = "datasets_ncs/format/function%d.rw" % problem_index
+    save_path = "../datasets_ncs/format/function%d.rw" % problem_index
     p = load_parameter(save_path)
     if p.o is not None:
         p.o = p.o[0:dim]
@@ -17,5 +17,7 @@ def load_problem(problem_index, dim=30):
     if p.alpha is not None:
         p.alpha = p.alpha[0:dim]
 
-    p.lu = np.asarray([p.lu] * dim).transpose()  # D X 2
+    import numpy as cpu
+
+    p.lu = np.array(cpu.array([p.lu] * dim).transpose())  # D X 2
     return p

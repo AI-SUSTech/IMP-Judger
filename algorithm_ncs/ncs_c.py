@@ -1,7 +1,7 @@
 import time
 from collections import namedtuple
 
-import numpy as np
+import minpy.numpy as np
 
 import algorithm_ncs.problem as ncs_problem
 import algorithm_ncs.benchmark as benchmark
@@ -53,14 +53,14 @@ class NCS_C(object):
             pos = uSet < xl
             uSet[pos] = 2. * xl[pos] - uSet[pos]
             pos_ = np.where(pos)
-            for i in range(len(pos_[0])):
+            for i in range(pos_[0].shape[0]):
                 if uSet[pos_[0][i]][pos_[1][i]] > xu[pos_[0][i]][pos_[1][i]]:
                     uSet[pos_[0][i]][pos_[1][i]] = xu[pos_[0][i]][pos_[1][i]]
 
             pos = uSet > xu
             uSet[pos] = 2. * xu[pos] - uSet[pos]
             pos_ = np.where(pos)
-            for i in range(len(pos_[0])):
+            for i in range(pos_[0].shape[0]):
                 if uSet[pos_[0][i]][pos_[1][i]] < xl[pos_[0][i]][pos_[1][i]]:
                     uSet[pos_[0][i]][pos_[1][i]] = xl[pos_[0][i]][pos_[1][i]]
 

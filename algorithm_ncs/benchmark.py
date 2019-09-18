@@ -1,4 +1,4 @@
-import numpy as np
+import minpy.numpy as np
 
 
 def benchmark_func(x, problem, parameter):

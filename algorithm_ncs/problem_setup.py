@@ -1,5 +1,5 @@
 import pickle
-import numpy as np
+import minpy.numpy as np
 from algorithm_ncs import *
 
 def save_parameter(para, file_name):
