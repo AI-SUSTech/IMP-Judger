@@ -89,12 +89,12 @@ class NCS_C(object):
                         m1 = p[i, :] - p[j, :]
                         c1 = (sigma[i, :] ** 2 + sigma[j, :] ** 2) / 2
                         # tempD = 0
-                        # for k in range(self.N):
+                        # for k in range(self.Dimension):
                         #     tempD = tempD + np.log(c1[k]) - \
                         #             0.5 * (np.log(sigma[i][k] ** 2) + np.log(sigma[j][k] ** 2))
 
                         smart_tempD = np.log(c1).sum() - \
-                                0.5 * np.log(sigma[i] ** 2).sum() + np.log(sigma[j] ** 2).sum()
+                                0.5 * (np.log(sigma[i] ** 2).sum() + np.log(sigma[j] ** 2).sum())
                         tempD = smart_tempD
 
                         pCorr[i, j] = np.dot(1 / 8 * m1 / c1, m1) + 1 / 2 * tempD
