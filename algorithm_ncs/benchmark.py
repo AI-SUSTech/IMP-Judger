@@ -57,22 +57,25 @@ class Func12(BaseFunc):
         num_col, dimension,  = x.shape
         fitness = np.zeros(num_col)
         if not self.is_init:
-            self.A = np.zeros(dimension)
-            for i in range(dimension):
-                # calculate Ai and Bi
-                for j in range(dimension):
-                    self.A[i] += a[i][j] * np.sin(alpha[j]) + b[i][j] * np.cos(alpha[j])
+            self.A = np.dot(a, np.sin(alpha)) + np.dot(b, np.cos(alpha))
+            # for i in range(dimension):
+            #     # calculate Ai and Bi
+            #     self.A[i] = np.dot(a[i], np.sin(alpha)) + np.dot(b[i], np.cos((alpha)))
+            #     for j in range(dimension):
+            #         self.A[i] += a[i][j] * np.sin(alpha[j]) + b[i][j] * np.cos(alpha[j])
             self.is_init = True
 
         for n in range(num_col):
             onefitness = -460
-            for i in range(dimension):
-                # calculate Ai and Bi
-                Ai = self.A[i]
-                Bi = np.dot(a[i], np.sin(x[n])) + np.dot(b[i], np.cos(x[n]))
-                # for j in range(dimension):
-                #     Bi += b[i][j]*np.cos(x[j][n])
-                onefitness += np.power(Ai-Bi, 2)
+
+            onefitness += sum((np.dot(a, np.sin(x[n])) + np.dot(b, np.cos(x[n])) - self.A)**2)
+            # for i in range(dimension):
+            #     # calculate Ai and Bi
+            #     Ai = self.A[i]
+            #     Bi = np.dot(a[i], np.sin(x[n])) + np.dot(b[i], np.cos(x[n]))
+            #     # for j in range(dimension):
+            #     #     Bi += b[i][j]*np.cos(x[j][n])
+            #     onefitness += (Ai-Bi) ** 2
             fitness[n] = onefitness
         return fitness
 
