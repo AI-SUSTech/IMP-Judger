@@ -1,6 +1,6 @@
 import minpy
 
-minpy.set_global_policy('only_numpy')
+minpy.set_global_policy('only_mxnet')
 
 
 class Parameter:

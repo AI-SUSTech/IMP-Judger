@@ -2,6 +2,7 @@ import time
 from collections import namedtuple
 
 import minpy.numpy as np
+import numpy as np_c
 
 import algorithm_ncs.problem as ncs_problem
 import algorithm_ncs.benchmark as benchmark
@@ -43,7 +44,7 @@ class NCS_C(object):
 
         while FES < self.Dimension * self.Tmax:
             # generate a set of new trial individuals
-            uSet = p + sigma * np.random.normal(size=(self.N, self.Dimension))
+            uSet = p + sigma * np.random.normal(0, 1, (self.N, self.Dimension))
 
             # check the boundary constraints
             xl = np.tile(self.problem_para.lu[0], (self.N, 1))
@@ -52,17 +53,24 @@ class NCS_C(object):
             # let value of uSet less than xl to be 2*xl-uSet
             pos = uSet < xl
             uSet[pos] = 2. * xl[pos] - uSet[pos]
-            pos_ = np.where(pos)
-            for i in range(pos_[0].shape[0]):
-                if uSet[pos_[0][i]][pos_[1][i]] > xu[pos_[0][i]][pos_[1][i]]:
-                    uSet[pos_[0][i]][pos_[1][i]] = xu[pos_[0][i]][pos_[1][i]]
+
+            pos_ = uSet[pos] > xu[pos]
+            uSet[pos[pos_]] = xu[pos[pos_]]
+
+            # pos_ = np_c.where(np_c.array(pos))
+            # for i in range(pos_[0].shape[0]):
+            #     if uSet[pos_[0][i]][pos_[1][i]] > xu[pos_[0][i]][pos_[1][i]]:
+            #         uSet[pos_[0][i]][pos_[1][i]] = xu[pos_[0][i]][pos_[1][i]]
 
             pos = uSet > xu
             uSet[pos] = 2. * xu[pos] - uSet[pos]
-            pos_ = np.where(pos)
-            for i in range(pos_[0].shape[0]):
-                if uSet[pos_[0][i]][pos_[1][i]] < xl[pos_[0][i]][pos_[1][i]]:
-                    uSet[pos_[0][i]][pos_[1][i]] = xl[pos_[0][i]][pos_[1][i]]
+
+            pos_ = uSet[pos] < xl[pos]
+            uSet[pos[pos_]] = xl[pos[pos_]]
+            # pos_ = np.where(pos)
+            # for i in range(pos_[0].shape[0]):
+            #     if uSet[pos_[0][i]][pos_[1][i]] < xl[pos_[0][i]][pos_[1][i]]:
+            #         uSet[pos_[0][i]][pos_[1][i]] = xl[pos_[0][i]][pos_[1][i]]
 
             # Evaluate the trial vectors
             fitSet = benchmark.benchmark_func(uSet, self.problem_index, self.problem_para)
@@ -71,7 +79,7 @@ class NCS_C(object):
             temp_min_f = min(min(fitSet), min_fit)
             if temp_min_f != min_fit:
                 min_fit = temp_min_f
-                print('the best result at the', Gen, 'th iteration is', min_fit)
+            print('the best result at the', Gen, 'th iteration is', min_fit)
 
             tempFit = fit - min_fit
             tempTrialFit = fitSet - min_fit
@@ -90,8 +98,8 @@ class NCS_C(object):
                         c1 = (sigma[i, :] ** 2 + sigma[j, :] ** 2) / 2
                         tempD = 0
                         for k in range(self.N):
-                            tempD = tempD + np.log(c1[k]) - \
-                                    0.5 * (np.log(sigma[i][k] ** 2) + np.log(sigma[j][k] ** 2))
+                            tempD = tempD + np_c.log(c1[k]) - \
+                                    0.5 * (np_c.log(sigma[i][k] ** 2) + np_c.log(sigma[j][k] ** 2))
                         pCorr[i, j] = np.dot(np.dot(1 / 8 * m1, np.diag(1. / c1)), m1) + 1 / 2 * tempD
                         # BD between the ith offspring and the other parents
                         m2 = uSet[i, :] - p[j, :]
@@ -103,7 +111,7 @@ class NCS_C(object):
             #  normalize correlation values
             normCorr = pMinCorr / (pMinCorr + trialMinCorr)
             normTrialCorr = trialMinCorr / (pMinCorr + trialMinCorr)
-            _lambda = 1 + _lambda_sigma * np.random.normal(size=(self.N))
+            _lambda = 1 + _lambda_sigma * np.random.normal(0, 1, (self.N))
             _lambda_sigma = _lambda_range - _lambda_range * Gen / (self.Dimension * self.Tmax / self.N)
             pos = (_lambda * normTrialCorr > normTrialFit)
             p[pos, :] = uSet[pos, :]
