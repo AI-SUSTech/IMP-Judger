@@ -40,6 +40,9 @@ class NCSCase:
         self._timedout = False
         self._statuscode = -1
 
+        self.ncs_para = None
+        self.ncs_res = 1e300
+
     def __enter__(self):
         # Load data
         zipdata = BytesIO(self._zipdata)
@@ -55,24 +58,7 @@ class NCSCase:
             self.data = config['data']
         else:
             self.data = ''
-        if 'network' in config:
-            self.network = config['network']
-        else:
-            self.network = ''
-        if 'seeds' in config:
-            self.seeds = config['seeds']
-        else:
-            self.seeds = ''
-        if 'seedCount' in config:
-            self.seedCount = config['seedCount']
-            if self.seedCount <= 0:
-                raise ArchiveError('Invalid seedCount')
-        else:
-            self.seedCount = 0
-        if 'model' in config:
-            self.model = config['model']
-        else:
-            self.model = ''
+
         self.parameters = config['parameters']
         self.time = config['time']
         self.memory = config['memory']
@@ -81,53 +67,19 @@ class NCSCase:
             self.seed = config['seed']
         if self.entry == '':
             raise ArchiveError('No entry point')
-        # Find program and data
-        program_files = []
-        data_files = []
-        for item in filelist:
-            if item.startswith('program/') and item != 'program/':
-                program_files.append(item)
-            elif item.startswith('data/') and item != 'data/':
-                data_files.append(item)
-        if ('program/' + self.entry) not in program_files:
+
+        if self.entry not in filelist:
             raise ArchiveError('Entry file not found: ' + self.entry)
-        if self.data != '' and ('data/' + self.data) not in data_files:
-            raise ArchiveError('Data file not found: ' + self.data)
-        if self.network != '' and ('data/' + self.network) not in data_files:
-            raise ArchiveError('Network file not found: ' + self.network)
-        if self.seeds != '' and ('data/' + self.seeds) not in data_files:
-            raise ArchiveError('Seeds file not found: ' + self.seeds)
-        # Prepare sandbox
-        progdir = os.path.join(self._tempdir, 'program')
-        if not os.path.exists(progdir):
-            os.makedirs(progdir)
-        datadir = os.path.join(self._tempdir, 'data')
-        if not os.path.exists(datadir):
-            os.makedirs(datadir)
-        for item in (program_files + data_files):
-            new_path = os.path.join(self._tempdir, item)
-            # check dir or not
-            if item[-1] == '/':
-                os.makedirs(new_path)
-                continue
-            outpath = os.path.join(self._tempdir, item)
-            os.makedirs(os.path.dirname(outpath), exist_ok=True)
-            with open(outpath, 'wb') as outfile:
-                with zipfile.open(item) as file:
-                    data = file.read()
-                    data.replace(b'\r', b'')
-                    outfile.write(data)
-        # Prepare arguments
-        if self.data:
-            self.parameters = self.parameters.replace('$data', os.path.join(SANDBOX_TMP_DIR, 'data', self.data))
-        if self.network:
-            self.parameters = self.parameters.replace('$network', os.path.join(SANDBOX_TMP_DIR, 'data', self.network))
-        if self.seeds:
-            self.parameters = self.parameters.replace('$seeds', os.path.join(SANDBOX_TMP_DIR, 'data', self.seeds))
-        if self.seedCount:
-            self.parameters = self.parameters.replace('$seedCount', str(self.seedCount))
-        if self.model:
-            self.parameters = self.parameters.replace('$model', self.model)
+
+        with zipfile.open(self.entry) as file:
+            try:
+                ncs_para = json.loads(file.read())
+            except:
+                raise Exception("not a json format file")
+
+
+        self.ncs_para = ncs_para
+
         self.parameters = self.parameters.replace('$time', str(self.time))
         self.parameters = self.parameters.replace('$cpu', str(self.cpu))
         self.parameters = self.parameters.replace('$memory', str(self.memory))
@@ -208,10 +160,22 @@ class NCSCase:
 
 
         #### Test
-        await asyncio.sleep(10)
+        # await asyncio.sleep(10)
+        from algorithm_ncs import ncs_c
+
+        tmax = self.ncs_para["Tmax"]
+        sigma = self.ncs_para["sigma"]
+        r = self.ncs_para["r"]
+        epoch = self.ncs_para["epoch"]
+        n= self.ncs_para["n"]
+        ncs_para = ncs_c.NCS_CParameter(tmax=tmax, sigma=sigma, r=r, epoch=epoch, N=n)
+        p = self._dataset["problem_index"]
+        print("************ start problem %d **********" % p)
+        ncs_c = ncs_c.NCS_C(ncs_para, p)
+        self.ncs_res = ncs_c.loop(quiet=True)
 
         timedout = False
-        _stdout = b'stupy'
+        _stdout = "parameter: {}".format(ncs_para).encode()
         _stderr = b'are you ok'
         statuscode = 0
         #### 
@@ -223,28 +187,7 @@ class NCSCase:
 
         return timedout, _stdout, _stderr, statuscode
 
-    async def check_imp_result(self):
-        if self._timedout:
-            return False, 0., 'Timed out'
-        if self._statuscode == 137:
-            return False, 0., 'Killed (Out of memory)'
-        if self._statuscode != 0:
-            return False, 0., 'Exit code is not zero'
-        if not self._stdout:
-            return False, 0., 'No output'
-        stdout = self._stdout.decode('utf8')
-        network = self._dataset['network']
-        seed_count = self._dataset['seedCount']
-        reason = 'stupy'
-        result = 0.
-        valid = False
-        try:
-            result = await estimate_async(network, stdout, seed_count, model=self.model)
-            valid = True
-            reason = 'Solution accepted'
-        except SolutionError as err:
-            reason = err.get_reason()
-        return valid, result, reason
+
 
     def close(self):
         try:

@@ -22,7 +22,7 @@ class NCS_C(object):
         self.problem_para = ncs_problem.load_problem(problem, self.Dimension)
         self.result = 390
 
-    def loop(self, total_time=1):
+    def loop(self, total_time=1, quiet=False):
         np.random.seed(int(100 * time.clock()))
         # initial the main population
         p = np.tile(self.problem_para.lu[0, :], (self.N, 1)) + \
@@ -45,7 +45,7 @@ class NCS_C(object):
         xl = np.tile(self.problem_para.lu[0], (self.N, 1))
         xu = np.tile(self.problem_para.lu[1], (self.N, 1))
 
-        while FES < self.Dimension * self.Tmax:
+        while FES < self.Tmax:
             # generate a set of new trial individuals
             uSet = p + sigma * np.random.normal(size=(self.N, self.Dimension))
 
@@ -71,7 +71,8 @@ class NCS_C(object):
             temp_min_f = min(fitSet.min(), min_fit)
             if temp_min_f != min_fit:
                 min_fit = temp_min_f
-                print('the best result at the', Gen, 'th iteration is', min_fit)
+                if not quiet:
+                    print('the best result at the', Gen, 'th iteration is', min_fit)
 
             tempFit = fit - min_fit
             tempTrialFit = fitSet - min_fit
@@ -111,7 +112,7 @@ class NCS_C(object):
             normCorr = pMinCorr / (pMinCorr + trialMinCorr)
             normTrialCorr = trialMinCorr / (pMinCorr + trialMinCorr)
             _lambda = 1 + _lambda_sigma * np.random.normal(size=(self.N))
-            _lambda_sigma = _lambda_range - _lambda_range * Gen / (self.Dimension * self.Tmax / self.N)
+            _lambda_sigma = _lambda_range - _lambda_range * Gen / (self.Tmax / self.N)
             pos = (_lambda * normTrialCorr > normTrialFit)
             p[pos, :] = uSet[pos, :]
             fit[pos] = fitSet[pos]
@@ -138,7 +139,7 @@ if __name__ == '__main__':
     for p in problem_set:
         print("\n************ the problem %d started! ************\n" % p)
         start = time.time()
-        ncs_para = NCS_CParameter(tmax=10000, sigma=1, r=0.99, epoch=10, N=10)
+        ncs_para = NCS_CParameter(tmax=300000, sigma=1, r=0.99, epoch=10, N=10)
         ncs_c = NCS_C(ncs_para, p)
         ncs_c.loop()
         print('the {} th problem result is: {}'.format(p, ncs_c.get_result()))
