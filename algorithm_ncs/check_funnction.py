@@ -46,6 +46,19 @@ class FuncTest(unittest.TestCase):
             self.assertTrue(abs((v[i]-res[i])/v[i]) < 0.001)
 
 
+    def test_fun9(self):
+        v, res = test_func(9)
+        for i in range(len(res)):
+            self.assertTrue(abs((v[i]-res[i])/v[i]) < 0.001)
+
+
+    def test_fun10(self):
+        v, res = test_func(10)
+        for i in range(len(res)):
+            self.assertTrue(abs((v[i]-res[i])/v[i]) < 0.001)
+
+
+
 if __name__ == '__main__':
     unittest.main()
 

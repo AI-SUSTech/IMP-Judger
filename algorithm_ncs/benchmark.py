@@ -48,6 +48,37 @@ class Func6(BaseFunc):
         return fitness
 
 
+class Func8(BaseFunc):
+    def func(self, x, o, A, M, a, alpha, b):
+        num_col, dimension = x.shape
+        fitness = np.zeros(num_col)
+        for i in range(num_col):
+            onefitness = 390
+            z = x[i] - o + 1
+            for d in range(dimension - 1):
+                onefitness += 100 * (z[d] ** 2 - z[d + 1]) ** 2 + (z[d] - 1) ** 2
+            fitness[i] = onefitness
+        return fitness
+
+
+class Func9(BaseFunc):
+    def func(self, x, o, A, M, a, alpha, b):
+        num_col, dimension = x.shape
+        fitness = np.full(num_col, -330.)
+        z = x - np.tile(o, (num_col, 1))
+        fitness += np.sum(z**2 - 10*np.cos(2*np.pi*z), 1) + 10 * dimension
+        return fitness
+
+class Func10(BaseFunc):
+    def func(self, x, o, A, M, a, alpha, b):
+        num_col, dimension = x.shape
+        fitness = np.full(num_col, -330.)
+        z = np.dot(x - np.tile(o, (num_col, 1)), M)
+        fitness += np.sum(z**2 - 10*np.cos(2*np.pi*z), 1) + 10 * dimension
+        return fitness
+
+
+
 class Func12(BaseFunc):
     def __init__(self):
         self.A = None
@@ -82,4 +113,6 @@ class Func12(BaseFunc):
 
 func_list = [BaseFunc()] * 30
 func_list[6] = Func6()
+func_list[9] = Func9()
+func_list[10] = Func10()
 func_list[12] = Func12()

@@ -135,7 +135,7 @@ class NCS_C(object):
 
 
 if __name__ == '__main__':
-    problem_set = [12, 6,]
+    problem_set = [6, 12, 10, 9,]
     for p in problem_set:
         print("\n************ the problem %d started! ************\n" % p)
         start = time.time()
