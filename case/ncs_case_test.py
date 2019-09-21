@@ -1,7 +1,7 @@
 import asyncio
 import unittest
 import msg_types
-from case.carp_case import CARPCase
+from case import CARPCase
 from ie import estimate, estimate_async, SolutionError
 
 

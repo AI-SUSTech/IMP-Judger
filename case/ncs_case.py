@@ -98,65 +98,65 @@ class NCSCase:
                         return True, None
 
     async def run(self, stdout=True, stderr=True):
-        # if self._container is not None:
-        #     raise SandboxError('Container already exists!')
-        # # Build command
-        # command = 'python3 {program} {parameters}'.format(
-        #     program=os.path.join(SANDBOX_TMP_DIR, 'program', self.entry),
-        #     parameters=self.parameters
-        # )
-        # self._container = _docker_client.containers.run(
-        #     image=IMAGE_NAME,
-        #     command=command,
-        #     name=self.cid,
-        #     auto_remove=False,
-        #     detach=True,
-        #     read_only=True,
-        #     nano_cpus=self.cpu * 1000000000,
-        #     mem_limit=str(self.memory) + 'm',
-        #     memswap_limit=str(int(self.memory * 1.5)) + 'm',
-        #     pids_limit=64,
-        #     network_mode='none',
-        #     stop_signal='SIGKILL',
-        #     volumes={self._tempdir: {'bind': SANDBOX_TMP_DIR, 'mode': 'ro'}},
-        #     working_dir=os.path.join(SANDBOX_TMP_DIR, 'program'),
-        #     tmpfs={
-        #         '/tmp': 'rw,size=1g',
-        #         '/run': 'rw,size=1g'
-        #     },
-        #     stdout=stdout,
-        #     stderr=stderr,
-        #     log_config={
-        #         'config': {
-        #             'mode': 'non-blocking',
-        #             'max-size': '1m',
-        #             'max-file': '2'
-        #         }
-        #     }
-        # )
-        # timedout, response = await self._wait_container()
-        # statuscode = -1
-        # if timedout:
-        #     try:
-        #         self._container.kill()
-        #     except:
-        #         pass
-        # else:
-        #     statuscode = response['StatusCode']
-        # if stdout:
-        #     _stdout = self._container.logs(
-        #         stdout=True,
-        #         stderr=False
-        #     )
-        # else:
-        #     _stdout = b''
-        # if stderr:
-        #     _stderr = self._container.logs(
-        #         stdout=False,
-        #         stderr=True
-        #     )
-        # else:
-        #     _stderr = b''
+        if self._container is not None:
+            raise SandboxError('Container already exists!')
+        # Build command
+        command = 'python3 {program} {parameters}'.format(
+            program=os.path.join(SANDBOX_TMP_DIR, 'program', self.entry),
+            parameters=self.parameters
+        )
+        self._container = _docker_client.containers.run(
+            image=IMAGE_NAME,
+            command=command,
+            name=self.cid,
+            auto_remove=False,
+            detach=True,
+            read_only=True,
+            nano_cpus=self.cpu * 1000000000,
+            mem_limit=str(self.memory) + 'm',
+            memswap_limit=str(int(self.memory * 1.5)) + 'm',
+            pids_limit=64,
+            network_mode='none',
+            stop_signal='SIGKILL',
+            volumes={self._tempdir: {'bind': SANDBOX_TMP_DIR, 'mode': 'ro'}},
+            working_dir=os.path.join(SANDBOX_TMP_DIR, 'program'),
+            tmpfs={
+                '/tmp': 'rw,size=1g',
+                '/run': 'rw,size=1g'
+            },
+            stdout=stdout,
+            stderr=stderr,
+            log_config={
+                'config': {
+                    'mode': 'non-blocking',
+                    'max-size': '1m',
+                    'max-file': '2'
+                }
+            }
+        )
+        timedout, response = await self._wait_container()
+        statuscode = -1
+        if timedout:
+            try:
+                self._container.kill()
+            except:
+                pass
+        else:
+            statuscode = response['StatusCode']
+        if stdout:
+            _stdout = self._container.logs(
+                stdout=True,
+                stderr=False
+            )
+        else:
+            _stdout = b''
+        if stderr:
+            _stderr = self._container.logs(
+                stdout=False,
+                stderr=True
+            )
+        else:
+            _stderr = b''
 
 
         #### Test
@@ -171,8 +171,8 @@ class NCSCase:
         ncs_para = ncs_c.NCS_CParameter(tmax=tmax, sigma=sigma, r=r, epoch=epoch, N=n)
         p = self._dataset["problem_index"]
         print("************ start problem %d **********" % p)
-        ncs_c = ncs_c.NCS_C(ncs_para, p)
-        self.ncs_res = ncs_c.loop(quiet=True)
+        ncs_c2 = ncs_c.NCS_C(ncs_para, p)
+        self.ncs_res = ncs_c2.loop(quiet=True)
 
         timedout = False
         _stdout = "parameter: {}".format(ncs_para).encode()
