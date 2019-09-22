@@ -177,4 +177,4 @@ fabric.properties
 config.py
 
 .idea/
-test.json
+*.json

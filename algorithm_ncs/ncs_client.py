@@ -5,7 +5,7 @@ import argparse
 
 
 parser = argparse.ArgumentParser(description="This is a NCS solver")
-parser.add_argument("-c", "--config", default="algorithm_ncs/test.json", type=str, help="a json file that contains parameter")
+parser.add_argument("-c", "--config", default="algorithm_ncs/parameter.json", type=str, help="a json file that contains parameter")
 parser.add_argument("-d", "--data", default="6", type=int, help="the problem dataset that need to be solved")
 args = parser.parse_args()
 
@@ -13,7 +13,7 @@ args = parser.parse_args()
 """
 how to use it?
 example:
-    python3 -m algorithm_ncs.ncs_client -d 12 -c algorithm_ncs/test.json
+    python3 -m algorithm_ncs.ncs_client -d 12 -c algorithm_ncs/parameter.json
     
 good luck!
 """
