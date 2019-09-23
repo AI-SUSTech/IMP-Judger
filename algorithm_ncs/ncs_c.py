@@ -6,24 +6,27 @@ import numpy as np
 import algorithm_ncs.problem as ncs_problem
 import algorithm_ncs.benchmark as benchmark
 
-NCS_CParameter = namedtuple("NCS_CParameter", ["tmax", "sigma", "r", "epoch", "N"])
+NCS_CParameter = namedtuple("NCS_CParameter", ["tmax", "lambda_exp", "r", "epoch", "N"])
 
 
 class NCS_C(object):
 
     def __init__(self, para: NCS_CParameter, problem):
         self.Tmax = para.tmax
-        self.sigma = para.sigma
         self.r = para.r
         self.epoch = para.epoch
         self.N = para.N  # pop size
+        self._lambda_exp = para.lambda_exp
         self.problem_index = problem
         self.Dimension = 30
         self.problem_para = ncs_problem.load_problem(problem, self.Dimension)
-        self.result = 390
+        self.result = 1e100
 
-    def loop(self, total_time=1, quiet=False):
-        np.random.seed(int(100 * time.clock()))
+    def loop(self, quiet=False, seeds=None):
+        if seeds is None:
+            np.random.seed(int(100 * time.clock()))
+        else:
+            np.random.seed(seeds)
         # initial the main population
         p = np.tile(self.problem_para.lu[0, :], (self.N, 1)) + \
             np.random.random((self.N, self.Dimension)) * \
@@ -33,7 +36,7 @@ class NCS_C(object):
         min_fit = min(fit)
         sigma = np.tile((self.problem_para.lu[1] - self.problem_para.lu[0]) / self.N, (self.N, 1))
         flag = np.zeros((self.N, 1))
-        _lambda = np.ones((self.N, 1))
+        _lambda = np.ones((self.N, self._lambda_exp))
         _lambda_sigma = 0.1
         _lambda_range = _lambda_sigma
 
@@ -111,7 +114,7 @@ class NCS_C(object):
             #  normalize correlation values
             normCorr = pMinCorr / (pMinCorr + trialMinCorr)
             normTrialCorr = trialMinCorr / (pMinCorr + trialMinCorr)
-            _lambda = 1 + _lambda_sigma * np.random.normal(size=(self.N))
+            _lambda = self._lambda_exp + _lambda_sigma * np.random.normal(size=(self.N))
             _lambda_sigma = _lambda_range - _lambda_range * Gen / (self.Tmax / self.N)
             pos = (_lambda * normTrialCorr > normTrialFit)
             p[pos, :] = uSet[pos, :]
@@ -135,13 +138,13 @@ class NCS_C(object):
 
 
 if __name__ == '__main__':
-    problem_set = [6, 12, 10, 9,]
+    problem_set = [12,]
     for p in problem_set:
         print("\n************ the problem %d started! ************\n" % p)
         start = time.time()
-        ncs_para = NCS_CParameter(tmax=300000, sigma=1, r=0.99, epoch=10, N=10)
+        ncs_para = NCS_CParameter(tmax=300000, lambda_exp=1, r=0.99, epoch=10, N=10)
         ncs_c = NCS_C(ncs_para, p)
-        ncs_c.loop()
+        ncs_c.loop(seeds=0)
         print('the {} th problem result is: {}'.format(p, ncs_c.get_result()))
         print('the {} th problem cost time: {}'.format(p, time.time()-start))
 
