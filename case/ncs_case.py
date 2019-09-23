@@ -98,6 +98,8 @@ class NCSCase:
                         return True, None
 
     async def run(self, stdout=True, stderr=True):
+        '''
+        todo use docker container
         if self._container is not None:
             raise SandboxError('Container already exists!')
         # Build command
@@ -158,24 +160,23 @@ class NCSCase:
         else:
             _stderr = b''
 
-
+        '''
         #### Test
         # await asyncio.sleep(10)
         from algorithm_ncs import ncs_c
 
-        tmax = self.ncs_para["Tmax"]
-        sigma = self.ncs_para["sigma"]
+        _lambda = self.ncs_para["lambda"]
         r = self.ncs_para["r"]
         epoch = self.ncs_para["epoch"]
         n= self.ncs_para["n"]
-        ncs_para = ncs_c.NCS_CParameter(tmax=tmax, sigma=sigma, r=r, epoch=epoch, N=n)
+        ncs_para = ncs_c.NCS_CParameter(tmax=300000, lambda_exp=_lambda, r=r, epoch=epoch, N=n)
         p = self._dataset["problem_index"]
         print("************ start problem %d **********" % p)
         ncs_c2 = ncs_c.NCS_C(ncs_para, p)
-        self.ncs_res = ncs_c2.loop(quiet=True)
+        self.ncs_res = ncs_c2.loop(quiet=True, seeds=0)
 
         timedout = False
-        _stdout = "parameter: {}".format(ncs_para).encode()
+        _stdout = "parameter: {}".format(self.ncs_para).encode()
         _stderr = b'are you ok'
         statuscode = 0
         #### 
