@@ -26,13 +26,12 @@ if __name__ == '__main__':
         except:
             raise Exception("not a json format file")
 
-    tmax = ncs_para["Tmax"]
-    sigma = ncs_para["sigma"]
+    _lambda = ncs_para["lambda"]
     r = ncs_para["r"]
     epoch = ncs_para["epoch"]
     n= ncs_para["n"]
-    ncs_para = ncs.NCS_CParameter(tmax=tmax, sigma=sigma, r=r, epoch=epoch, N=n)
+    ncs_para = ncs.NCS_CParameter(tmax=300000, lambda_exp=_lambda, r=r, epoch=epoch, N=n)
     print("************ start problem %d **********" % p)
     ncs_c = ncs.NCS_C(ncs_para, p)
-    ncs_res = ncs_c.loop(quiet=False)
+    ncs_res = ncs_c.loop(quiet=False, seeds=0)
     print(ncs_res)
