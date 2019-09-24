@@ -13,9 +13,12 @@ import msg_types
 from errors import *
 from ie import estimate_async, SolutionError
 
-IMAGE_NAME = 'carp_judge'
-TMP_DIR = '/tmp/carp_judge'
-SANDBOX_TMP_DIR = '/workspace'
+IMAGE_NAME = 'cs303/oj_worker:v1'
+TMP_DIR = '/tmp/cs303/oj_worker/parameter'
+SANDBOX_TMP_DIR = '/parameter'
+
+WORKING_DIR = '/home/zhaoy/ncs_dev/carp_judge_worker/'
+SANDBOX_WORKING_DIR = '/workspace'
 
 if not os.path.exists(TMP_DIR):
     os.makedirs(TMP_DIR, exist_ok=True)
@@ -28,12 +31,12 @@ def id_generator(size=8, chars=string.ascii_letters + string.digits):
 
 
 class NCSCase:
-    def __init__(self, zip_data, cid=0, ctype=msg_types.NCS, dataset=json.loads('{}')):
+    def __init__(self, zip_data, cid="id", ctype=msg_types.NCS, dataset=json.loads('{}')):
         self.cid = cid
         self.ctype = ctype
         self._zipdata = zip_data
         self._dataset = dataset
-        self._tempdir = os.path.join(TMP_DIR, id_generator())
+        self._tempdir = id_generator()
         self._container = None
         self._stdout = b''
         self._stderr = b''
@@ -71,18 +74,24 @@ class NCSCase:
         if self.entry not in filelist:
             raise ArchiveError('Entry file not found: ' + self.entry)
 
-        with zipfile.open(self.entry) as file:
-            try:
-                ncs_para = json.loads(file.read())
-            except:
-                raise Exception("not a json format file")
+        # Prepare sandbox
+        progdir = os.path.join(TMP_DIR, self._tempdir)
+        if not os.path.exists(progdir):
+            os.makedirs(progdir)
+        new_path = os.path.join(progdir, self.entry)
+        # check dir or not
+        if self.entry[-1] == '/':
+            os.makedirs(new_path)
+        outpath = os.path.join(progdir, self.entry)
+        os.makedirs(os.path.dirname(outpath), exist_ok=True)
+        with open(outpath, 'wb') as outfile:
+            with zipfile.open(self.entry) as file:
+                data = file.read()
+                data.replace(b'\r', b'')
+                outfile.write(data)
 
-
-        self.ncs_para = ncs_para
-
-        self.parameters = self.parameters.replace('$time', str(self.time))
-        self.parameters = self.parameters.replace('$cpu', str(self.cpu))
-        self.parameters = self.parameters.replace('$memory', str(self.memory))
+        self.parameters = self.parameters.replace('$data', '12')
+        self.parameters = self.parameters.replace('$configure', os.path.join(SANDBOX_TMP_DIR, self._tempdir, self.entry))
         if 'seed' in config:
             self.parameters = self.parameters.replace('$seed', str(self.seed))
         return self
@@ -98,13 +107,12 @@ class NCSCase:
                         return True, None
 
     async def run(self, stdout=True, stderr=True):
-        '''
-        todo use docker container
+        # todo use docker container
         if self._container is not None:
             raise SandboxError('Container already exists!')
         # Build command
-        command = 'python3 {program} {parameters}'.format(
-            program=os.path.join(SANDBOX_TMP_DIR, 'program', self.entry),
+        command = 'python3 -m algorithm_ncs.ncs_client {parameters}'.format(
+            # program=os.path.join(SANDBOX_TMP_DIR, 'algorithm_ncs','ncs_client.py'),
             parameters=self.parameters
         )
         self._container = _docker_client.containers.run(
@@ -120,8 +128,9 @@ class NCSCase:
             pids_limit=64,
             network_mode='none',
             stop_signal='SIGKILL',
-            volumes={self._tempdir: {'bind': SANDBOX_TMP_DIR, 'mode': 'ro'}},
-            working_dir=os.path.join(SANDBOX_TMP_DIR, 'program'),
+            volumes={WORKING_DIR: {'bind': SANDBOX_WORKING_DIR, 'mode': 'ro'},
+                     TMP_DIR: {'bind': SANDBOX_TMP_DIR, 'mode': 'ro'}},
+            working_dir=SANDBOX_WORKING_DIR,
             tmpfs={
                 '/tmp': 'rw,size=1g',
                 '/run': 'rw,size=1g'
@@ -160,25 +169,25 @@ class NCSCase:
         else:
             _stderr = b''
 
-        '''
+        
         #### Test
         # await asyncio.sleep(10)
-        from algorithm_ncs import ncs_c
+        # from algorithm_ncs import ncs_c
 
-        _lambda = self.ncs_para["lambda"]
-        r = self.ncs_para["r"]
-        epoch = self.ncs_para["epoch"]
-        n= self.ncs_para["n"]
-        ncs_para = ncs_c.NCS_CParameter(tmax=300000, lambda_exp=_lambda, r=r, epoch=epoch, N=n)
-        p = self._dataset["problem_index"]
-        print("************ start problem %d **********" % p)
-        ncs_c2 = ncs_c.NCS_C(ncs_para, p)
-        self.ncs_res = ncs_c2.loop(quiet=True, seeds=0)
+        # _lambda = self.ncs_para["lambda"]
+        # r = self.ncs_para["r"]
+        # epoch = self.ncs_para["epoch"]
+        # n= self.ncs_para["n"]
+        # ncs_para = ncs_c.NCS_CParameter(tmax=300000, lambda_exp=_lambda, r=r, epoch=epoch, N=n)
+        # p = self._dataset["problem_index"]
+        # print("************ start problem %d **********" % p)
+        # ncs_c2 = ncs_c.NCS_C(ncs_para, p)
+        # self.ncs_res = ncs_c2.loop(quiet=True, seeds=0)
 
-        timedout = False
-        _stdout = "parameter: {}".format(self.ncs_para).encode()
-        _stderr = b'are you ok'
-        statuscode = 0
+        # timedout = False
+        # _stdout = "parameter: {}".format(self.ncs_para).encode()
+        # _stderr = b'are you ok'
+        # statuscode = 0
         #### 
 
         self._stdout = _stdout
@@ -195,7 +204,7 @@ class NCSCase:
             self._container.remove(force=True)
         except:
             pass
-        shutil.rmtree(self._tempdir, ignore_errors=True)
+        shutil.rmtree(os.path.join(TMP_DIR, self._tempdir), ignore_errors=True)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
