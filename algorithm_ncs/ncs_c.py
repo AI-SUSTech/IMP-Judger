@@ -36,7 +36,7 @@ class NCS_C(object):
         min_fit = min(fit)
         sigma = np.tile((self.problem_para.lu[1] - self.problem_para.lu[0]) / self.N, (self.N, 1))
         flag = np.zeros((self.N, 1))
-        _lambda = np.ones((self.N, self._lambda_exp))
+        _lambda = np.full(self.N, self._lambda_exp, dtype=float)
         _lambda_sigma = 0.1
         _lambda_range = _lambda_sigma
 
