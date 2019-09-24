@@ -197,7 +197,22 @@ class NCSCase:
 
         return timedout, _stdout, _stderr, statuscode
 
-
+    async def check_result(self):
+        if self._timedout:
+            return False, 0., 'Timed out'
+        if self._statuscode == 137:
+            return False, 0., 'Killed (Out of memory)'
+        if self._statuscode != 0:
+            return False, 0., 'Exit code is not zero'
+        if not self._stdout:
+            return False, 0., 'No output'
+        stdout = self._stdout.decode('utf8')
+        print("DEBUG!!!!", stdout.split('\n'))
+        reason = 'success'
+        result = float(stdout.split('\n')[0])
+        valid = True
+        
+        return valid, result, reason
 
     def close(self):
         try:
