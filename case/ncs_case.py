@@ -90,7 +90,7 @@ class NCSCase:
                 data.replace(b'\r', b'')
                 outfile.write(data)
 
-        self.parameters = self.parameters.replace('$data', '12')
+        self.parameters = self.parameters.replace('$data',  str(self._dataset["problem_index"]))
         self.parameters = self.parameters.replace('$configure', os.path.join(SANDBOX_TMP_DIR, self._tempdir, self.entry))
         if 'seed' in config:
             self.parameters = self.parameters.replace('$seed', str(self.seed))
