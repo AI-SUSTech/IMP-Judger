@@ -36,7 +36,7 @@ class NCS_C(object):
         min_fit = min(fit)
         sigma = np.tile((self.problem_para.lu[1] - self.problem_para.lu[0]) / self.N, (self.N, 1))
         flag = np.zeros((self.N, 1))
-        _lambda = np.ones((self.N, self._lambda_exp))
+        _lambda = np.full(self.N, self._lambda_exp, dtype=float)
         _lambda_sigma = 0.1
         _lambda_range = _lambda_sigma
 
@@ -83,8 +83,8 @@ class NCS_C(object):
             normTrialFit = tempTrialFit / (tempFit + tempTrialFit)
 
             # calculate the Bhattacharyya distance
-            pCorr = np.full((self.N, self.N), 1e300)
-            trialCorr = np.full((self.N, self.N), 1e300)
+            pCorr = np.full((self.N, self.N), 1e30, dtype=float)
+            trialCorr = np.full((self.N, self.N), 1e30, dtype=float)
 
             for i in range(self.N):
                 for j in range(self.N):
@@ -138,13 +138,16 @@ class NCS_C(object):
 
 
 if __name__ == '__main__':
-    problem_set = [12,]
+    problem_set = [6,]
     for p in problem_set:
         print("\n************ the problem %d started! ************\n" % p)
         start = time.time()
         ncs_para = NCS_CParameter(tmax=300000, lambda_exp=1, r=0.99, epoch=10, N=10)
+        rep = 25
+        fits = np.zeros(rep)
         ncs_c = NCS_C(ncs_para, p)
-        ncs_c.loop(seeds=0)
-        print('the {} th problem result is: {}'.format(p, ncs_c.get_result()))
+        for t in range(rep):
+            fits[t] = ncs_c.loop(quiet=True)
+            print('the {} time the {} th problem result is: {}'.format(t+1, p, ncs_c.get_result()))
+        print('the {} th problem result is: {}, {}'.format(p, fits.mean(), fits.std()))
         print('the {} th problem cost time: {}'.format(p, time.time()-start))
-

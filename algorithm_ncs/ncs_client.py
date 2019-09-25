@@ -31,7 +31,7 @@ if __name__ == '__main__':
     epoch = ncs_para["epoch"]
     n= ncs_para["n"]
     ncs_para = ncs.NCS_CParameter(tmax=300000, lambda_exp=_lambda, r=r, epoch=epoch, N=n)
-    print("************ start problem %d **********" % p)
+    # print("************ start problem %d **********" % p)
     ncs_c = ncs.NCS_C(ncs_para, p)
-    ncs_res = ncs_c.loop(quiet=False, seeds=0)
+    ncs_res = ncs_c.loop(quiet=True, seeds=0)
     print(ncs_res)

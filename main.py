@@ -73,9 +73,7 @@ async def __judge_worker(idx):
                 if ctype == IMP:
                     valid, influence, reason = await case.check_imp_result()
                 else:
-                    valid = True
-                    influence = case.ncs_res
-                    reason = 'success'
+                    valid, influence, reason =  await case.check_result()
                 ret = {
                     'cid': cid,
                     'type': CASE_RESULT,

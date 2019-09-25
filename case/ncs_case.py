@@ -90,7 +90,7 @@ class NCSCase:
                 data.replace(b'\r', b'')
                 outfile.write(data)
 
-        self.parameters = self.parameters.replace('$data', '12')
+        self.parameters = self.parameters.replace('$data',  str(self._dataset["problem_index"]))
         self.parameters = self.parameters.replace('$configure', os.path.join(SANDBOX_TMP_DIR, self._tempdir, self.entry))
         if 'seed' in config:
             self.parameters = self.parameters.replace('$seed', str(self.seed))
@@ -197,7 +197,22 @@ class NCSCase:
 
         return timedout, _stdout, _stderr, statuscode
 
-
+    async def check_result(self):
+        if self._timedout:
+            return False, 0., 'Timed out'
+        if self._statuscode == 137:
+            return False, 0., 'Killed (Out of memory)'
+        if self._statuscode != 0:
+            return False, 0., 'Exit code is not zero'
+        if not self._stdout:
+            return False, 0., 'No output'
+        stdout = self._stdout.decode('utf8')
+        print("DEBUG!!!!", stdout.split('\n'))
+        reason = 'success'
+        result = float(stdout.split('\n')[0])
+        valid = True
+        
+        return valid, result, reason
 
     def close(self):
         try:
