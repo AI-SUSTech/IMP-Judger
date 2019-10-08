@@ -20,6 +20,11 @@ SANDBOX_TMP_DIR = '/parameter'
 WORKING_DIR = '/home/zhaoy/ncs_dev/carp_judge_worker/'
 SANDBOX_WORKING_DIR = '/workspace'
 
+OLMP_IMAGE_NAME = 'youngwilliam/olmp:v1'
+OLMP_WORKING_DIR = '/home/zhaoy/ncs_dev/OLMP'
+OLMP_DATA_DIR = '/home/zhaoy/ncs_dev/data/'
+DATA_DIR = '/home/data/'
+
 if not os.path.exists(TMP_DIR):
     os.makedirs(TMP_DIR, exist_ok=True)
 
@@ -63,6 +68,7 @@ class NCSCase:
             self.data = ''
 
         self.parameters = config['parameters']
+        print(self.parameters)
         self.time = config['time']
         self.memory = config['memory']
         self.cpu = config['cpu']
@@ -90,6 +96,7 @@ class NCSCase:
                 data.replace(b'\r', b'')
                 outfile.write(data)
 
+        
         self.parameters = self.parameters.replace('$data',  str(self._dataset["problem_index"]))
         self.parameters = self.parameters.replace('$configure', os.path.join(SANDBOX_TMP_DIR, self._tempdir, self.entry))
         if 'seed' in config:
@@ -111,12 +118,28 @@ class NCSCase:
         if self._container is not None:
             raise SandboxError('Container already exists!')
         # Build command
-        command = 'python3 -m algorithm_ncs.ncs_client {parameters}'.format(
-            # program=os.path.join(SANDBOX_TMP_DIR, 'algorithm_ncs','ncs_client.py'),
-            parameters=self.parameters
-        )
+        if self._dataset["problem_index"] == 29:
+            command = 'python exp_lenet300100.py {parameters}'.format(
+                # program=os.path.join(SANDBOX_TMP_DIR, 'algorithm_ncs','ncs_client.py'),
+                parameters=self.parameters
+            )
+            # command = 'nvidia-smi'
+            _volumes = {OLMP_WORKING_DIR: {'bind': SANDBOX_WORKING_DIR, 'mode': 'ro'},
+                     TMP_DIR: {'bind': SANDBOX_TMP_DIR, 'mode': 'ro'},
+                     OLMP_DATA_DIR: {'bind': DATA_DIR, 'mode': 'ro'}}
+            _IMAGE_NAME = OLMP_IMAGE_NAME
+            _runtime="nvidia"
+        else:
+            command = 'python3 -m algorithm_ncs.ncs_client {parameters}'.format(
+                # program=os.path.join(SANDBOX_TMP_DIR, 'algorithm_ncs','ncs_client.py'),
+                parameters=self.parameters
+            )
+            _volumes = {WORKING_DIR: {'bind': SANDBOX_WORKING_DIR, 'mode': 'ro'},
+                     TMP_DIR: {'bind': SANDBOX_TMP_DIR, 'mode': 'ro'}}
+            _IMAGE_NAME = IMAGE_NAME
+            _runtime=None
         self._container = _docker_client.containers.run(
-            image=IMAGE_NAME,
+            image=_IMAGE_NAME,
             command=command,
             name=self.cid,
             auto_remove=False,
@@ -128,8 +151,8 @@ class NCSCase:
             pids_limit=64,
             network_mode='none',
             stop_signal='SIGKILL',
-            volumes={WORKING_DIR: {'bind': SANDBOX_WORKING_DIR, 'mode': 'ro'},
-                     TMP_DIR: {'bind': SANDBOX_TMP_DIR, 'mode': 'ro'}},
+            volumes=_volumes,
+            runtime=_runtime,
             working_dir=SANDBOX_WORKING_DIR,
             tmpfs={
                 '/tmp': 'rw,size=1g',
@@ -169,7 +192,11 @@ class NCSCase:
         else:
             _stderr = b''
 
-        
+        if self._dataset["problem_index"] == 29 and _stdout != b'':
+            lines = _stdout.decode('ascii').splitlines()
+            if len(lines) > 0:
+                _stdout = (lines[-1] + "\n").encode('ascii') + _stdout
+
         #### Test
         # await asyncio.sleep(10)
         # from algorithm_ncs import ncs_c
