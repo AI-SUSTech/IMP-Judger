@@ -4,6 +4,7 @@ from algorithm_ncs.benchmark import benchmark_func
 from algorithm_ncs.problem import load_problem
 from algorithm_ncs.benchmark import optimal_sol
 
+
 def load_test_data(file_path):
     with open(file_path, "r") as f:
         lines_data = f.readlines()

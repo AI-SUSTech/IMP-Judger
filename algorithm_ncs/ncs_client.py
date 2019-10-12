@@ -6,7 +6,7 @@ import argparse
 
 parser = argparse.ArgumentParser(description="This is a NCS solver")
 parser.add_argument("-c", "--config", default="algorithm_ncs/parameter.json", type=str, help="a json file that contains parameter")
-parser.add_argument("-d", "--data", default="6", type=int, help="the problem dataset that need to be solved")
+parser.add_argument("-d", "--data", default="12", type=int, help="the problem dataset that need to be solved")
 args = parser.parse_args()
 
 
@@ -34,5 +34,5 @@ if __name__ == '__main__':
     print("using parameter:", ncs_para)
     print("************ start problem %d **********" % p)
     ncs_c = ncs.NCS_C(ncs_para, p)
-    ncs_res = ncs_c.loop(quiet=False, seeds=0)
+    ncs_res = ncs_c.loop(quiet=True, seeds=0)
     print(ncs_res)

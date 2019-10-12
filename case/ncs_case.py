@@ -192,6 +192,7 @@ class NCSCase:
         else:
             _stderr = b''
 
+        # put last line in the first line
         if _stdout != b'':
             lines = _stdout.decode('ascii').splitlines()
             if len(lines) > 0:
