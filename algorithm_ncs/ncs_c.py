@@ -147,7 +147,7 @@ if __name__ == '__main__':
         fits = np.zeros(rep)
         ncs_c = NCS_C(ncs_para, p)
         for t in range(rep):
-            fits[t] = ncs_c.loop(quiet=True)
+            fits[t] = ncs_c.loop(quiet=False)
             print('the {} time the {} th problem result is: {}'.format(t+1, p, ncs_c.get_result()))
         print('the {} th problem result is: {}, {}'.format(p, fits.mean(), fits.std()))
         print('the {} th problem cost time: {}'.format(p, time.time()-start))

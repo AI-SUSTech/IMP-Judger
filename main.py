@@ -49,6 +49,7 @@ async def __judge_worker(idx):
             ctype = obj['type']
             dataset = obj['dataset']
             logging.info('Enter judge for id: ' + cid)
+            logging.debug('dataset: {}'.format(obj['dataset']))
             with ncs_case.NCSCase(data, cid, ctype, dataset) as case:
                 logging.info('[{}]({}) Start judge'.format(idx, cid))
                 obj = {

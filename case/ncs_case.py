@@ -192,7 +192,7 @@ class NCSCase:
         else:
             _stderr = b''
 
-        if self._dataset["problem_index"] == 29 and _stdout != b'':
+        if _stdout != b'':
             lines = _stdout.decode('ascii').splitlines()
             if len(lines) > 0:
                 _stdout = (lines[-1] + "\n").encode('ascii') + _stdout
