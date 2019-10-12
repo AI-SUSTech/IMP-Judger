@@ -5,6 +5,7 @@ import numpy as np
 
 import algorithm_ncs.problem as ncs_problem
 import algorithm_ncs.benchmark as benchmark
+from algorithm_ncs.benchmark import optimal_sol
 
 NCS_CParameter = namedtuple("NCS_CParameter", ["tmax", "lambda_exp", "r", "epoch", "N"])
 
@@ -130,11 +131,11 @@ class NCS_C(object):
                         sigma[i,:] = sigma[i,:] * self.r
                 flag = np.zeros((self.N, 1))
 
-        self.result = min_fit
-        return min_fit
+        self.result = min_fit + optimal_sol[self.problem_index]
+        return self.result
 
     def get_result(self):
-        return self.result
+        return self.result 
 
 
 if __name__ == '__main__':

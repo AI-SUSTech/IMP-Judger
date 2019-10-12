@@ -1,5 +1,8 @@
 import numpy as np
 
+optimal_sol = [0]*30
+optimal_sol[6] = 390
+optimal_sol[12] = -460
 
 def benchmark_func(x, problem, parameter):
     """
@@ -40,7 +43,7 @@ class Func6(BaseFunc):
         num_col, dimension = x.shape
         fitness = np.zeros(num_col)
         for i in range(num_col):
-            onefitness = 390
+            onefitness = 0
             z = x[i] - o + 1
             for d in range(dimension - 1):
                 onefitness += 100 * (z[d] ** 2 - z[d + 1]) ** 2 + (z[d] - 1) ** 2
@@ -97,7 +100,7 @@ class Func12(BaseFunc):
             self.is_init = True
 
         for n in range(num_col):
-            onefitness = -460
+            onefitness = 0
 
             onefitness += sum((np.dot(a, np.sin(x[n])) + np.dot(b, np.cos(x[n])) - self.A)**2)
             # for i in range(dimension):

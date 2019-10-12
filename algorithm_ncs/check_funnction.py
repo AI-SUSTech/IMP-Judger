@@ -2,7 +2,7 @@ import numpy as np
 import unittest
 from algorithm_ncs.benchmark import benchmark_func
 from algorithm_ncs.problem import load_problem
-
+from algorithm_ncs.benchmark import optimal_sol
 
 def load_test_data(file_path):
     with open(file_path, "r") as f:
@@ -37,11 +37,13 @@ class FuncTest(unittest.TestCase):
 
     def test_fun6(self):
         v, res = test_func(6)
+        res = res + optimal_sol[6]
         for i in range(len(res)):
             self.assertTrue(abs((v[i]-res[i])/v[i]) < 0.001)
 
     def test_fun12(self):
         v, res = test_func(12)
+        res = res + optimal_sol[12]
         for i in range(len(res)):
             self.assertTrue(abs((v[i]-res[i])/v[i]) < 0.001)
 
