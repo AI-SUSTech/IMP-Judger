@@ -86,10 +86,19 @@ class NCS_C(object):
             tempTrialFit = fitSet - min_fit
             # deal with 0 divided
             tempSum = tempFit + tempTrialFit
-            normFit = tempFit / tempSum
-            normTrialFit = tempTrialFit / tempSum
             zero_pos = tempSum == 0
-            normFit[zero_pos] = 0.5
+            real_ops = tempSum != 0
+            # if (zero_pos.any() == 0):
+            #     print('tempSum: {}, type: {}, T: {}'.format(tempSum, type(tempSum), tempSum.T))
+            tempSum[zero_pos] = np.average(tempTrialFit[real_ops])
+            # normFit = tempFit / tempSum
+            normTrialFit = tempTrialFit / tempSum
+            # if (not np.isfinite(normTrialFit).all()):
+            #     print("normTrialFit: {}, indx: {}, tempSum: {}".format(normTrialFit, zero_pos, tempSum))
+            #     normTrialFit[zero_pos] = 0.5
+            #     print("normTrialFit: {}, indx: {}, tempSum: {}, correct".format(normTrialFit, zero_pos, tempSum))
+            
+            # normFit[zero_pos] = 0.5
             normTrialFit[zero_pos] = 0.5
 
             # calculate the Bhattacharyya distance
