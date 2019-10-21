@@ -20,7 +20,7 @@ SANDBOX_TMP_DIR = '/parameter'
 WORKING_DIR = '/home/zhaoy/ncs_dev/carp_judge_worker/'
 SANDBOX_WORKING_DIR = '/workspace'
 
-OLMP_IMAGE_NAME = 'youngwilliam/olmp:v1'
+OLMP_IMAGE_NAME = 'youngwilliam/olmp:gpu_python3.6'
 OLMP_WORKING_DIR = '/home/zhaoy/ncs_dev/OLMP'
 OLMP_DATA_DIR = '/home/zhaoy/ncs_dev/data/'
 DATA_DIR = '/home/data/'
@@ -119,16 +119,15 @@ class NCSCase:
             raise SandboxError('Container already exists!')
         # Build command
         if self._dataset["problem_index"] == 29:
-            command = 'python exp_lenet300100.py {parameters}'.format(
+            command = 'python3 exp_lenet300100_3.py {parameters}'.format(
                 # program=os.path.join(SANDBOX_TMP_DIR, 'algorithm_ncs','ncs_client.py'),
                 parameters=self.parameters
             )
             # command = 'nvidia-smi'
-            _volumes = {OLMP_WORKING_DIR: {'bind': SANDBOX_WORKING_DIR, 'mode': 'ro'},
-                     TMP_DIR: {'bind': SANDBOX_TMP_DIR, 'mode': 'ro'},
-                     OLMP_DATA_DIR: {'bind': DATA_DIR, 'mode': 'ro'}}
+            _volumes = {TMP_DIR: {'bind': SANDBOX_TMP_DIR, 'mode': 'ro'}}
             _IMAGE_NAME = OLMP_IMAGE_NAME
             _runtime="nvidia"
+            _working_dir='/opt/caffe'
         else:
             command = 'python3 -m algorithm_ncs.ncs_client {parameters}'.format(
                 # program=os.path.join(SANDBOX_TMP_DIR, 'algorithm_ncs','ncs_client.py'),
@@ -138,6 +137,8 @@ class NCSCase:
                      TMP_DIR: {'bind': SANDBOX_TMP_DIR, 'mode': 'ro'}}
             _IMAGE_NAME = IMAGE_NAME
             _runtime=None
+            _working_dir=SANDBOX_WORKING_DIR
+        self.memory=1024
         self._container = _docker_client.containers.run(
             image=_IMAGE_NAME,
             command=command,
@@ -148,12 +149,12 @@ class NCSCase:
             nano_cpus=self.cpu * 1000000000,
             mem_limit=str(self.memory) + 'm',
             memswap_limit=str(int(self.memory * 1.5)) + 'm',
-            pids_limit=64,
+            pids_limit=1024,
             network_mode='none',
             stop_signal='SIGKILL',
             volumes=_volumes,
             runtime=_runtime,
-            working_dir=SANDBOX_WORKING_DIR,
+            working_dir=_working_dir,
             tmpfs={
                 '/tmp': 'rw,size=1g',
                 '/run': 'rw,size=1g'
