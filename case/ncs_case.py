@@ -22,7 +22,8 @@ WORKING_DIR = '/home/zhaoy/ncs_dev/carp_judge_worker/'
 SANDBOX_WORKING_DIR = '/workspace'
 
 OLMP_IMAGE_NAME = 'youngwilliam/olmp:gpu_python3.6'
-OLMP_WORKING_DIR = '/home/zhaoy/ncs_dev/OLMP'
+OLMP_WORKING_DIR = '/home/zhaoy/ncs_dev/OLMP/exp_lenet300100_3.py'
+OLMP_DOCKER_DIR = '/opt/caffe/exp_lenet300100_3.py'
 OLMP_DATA_DIR = '/home/zhaoy/ncs_dev/data/'
 DATA_DIR = '/home/data/'
 
@@ -43,7 +44,7 @@ async def allocate_GPU():
     while True:
         for i, state in enumerate(LIST_GPU):
             if state == 0:
-                LIST_GPU[i] = 1
+                LIST_GPU[i] = 1 # mark used
                 logging.info('Get GPU device: {}'.format(i))
                 return i
         logging.info('do not have GPU, wait 60 s')
@@ -51,11 +52,11 @@ async def allocate_GPU():
 
 
 def release_GPU(index):
-    if LIST_GPU[index] != 0:
-        logging.info('release fail for device: {}, not used yet'.format{index})
+    if index >= 8 or index < 0 or LIST_GPU[index] == 0:
+        logging.info('release fail for GPU device {}:{}, not used yet'.format(index, LIST_GPU[index]))
     else:
-        LIST_GPU[index] = 0
-        logging.info('release success for device: {}'.format{index})
+        LIST_GPU[index] = 0 # mark not used
+        logging.info('release success for GPU device: {}'.format(index))
 
 
 class NCSCase:
@@ -143,7 +144,7 @@ class NCSCase:
             raise SandboxError('Container already exists!')
         # Build command
 
-        gpu_id = None
+        gpu_id = -1
         if self._dataset["problem_index"] == 29:
             gpu_id = await allocate_GPU()
             command = 'python3 exp_lenet300100_3.py -g {gpu} {parameters}'.format(
@@ -152,7 +153,8 @@ class NCSCase:
                 parameters=self.parameters
             )
             # command = 'nvidia-smi'
-            _volumes = {TMP_DIR: {'bind': SANDBOX_TMP_DIR, 'mode': 'ro'}}
+            _volumes = {OLMP_WORKING_DIR: {'bind': OLMP_DOCKER_DIR, 'mode': 'ro'},
+                TMP_DIR: {'bind': SANDBOX_TMP_DIR, 'mode': 'ro'}}
             _IMAGE_NAME = OLMP_IMAGE_NAME
             _runtime="nvidia"
             _working_dir='/opt/caffe'
@@ -198,7 +200,7 @@ class NCSCase:
             }
         )
         timedout, response = await self._wait_container()
-        if gpu_id not None:
+        if gpu_id != -1:
             release_GPU(gpu_id)
 
         statuscode = -1
