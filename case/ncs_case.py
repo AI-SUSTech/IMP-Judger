@@ -9,6 +9,7 @@ import aiohttp
 from io import BytesIO
 from zipfile import ZipFile
 import msg_types
+import logging
 
 from errors import *
 from ie import estimate_async, SolutionError
@@ -25,6 +26,7 @@ OLMP_WORKING_DIR = '/home/zhaoy/ncs_dev/OLMP'
 OLMP_DATA_DIR = '/home/zhaoy/ncs_dev/data/'
 DATA_DIR = '/home/data/'
 
+
 if not os.path.exists(TMP_DIR):
     os.makedirs(TMP_DIR, exist_ok=True)
 
@@ -33,6 +35,27 @@ _docker_client = docker.from_env()
 
 def id_generator(size=8, chars=string.ascii_letters + string.digits):
     return ''.join(random.choice(chars) for _ in range(size))
+
+
+LIST_GPU = [0] * 8
+
+async def allocate_GPU():
+    while True:
+        for i, state in enumerate(LIST_GPU):
+            if state == 0:
+                LIST_GPU[i] = 1
+                logging.info('Get GPU device: {}'.format(i))
+                return i
+        logging.info('do not have GPU, wait 60 s')
+        await asyncio.sleep(60)
+
+
+def release_GPU(index):
+    if LIST_GPU[index] != 0:
+        logging.info('release fail for device: {}, not used yet'.format{index})
+    else:
+        LIST_GPU[index] = 0
+        logging.info('release success for device: {}'.format{index})
 
 
 class NCSCase:
@@ -114,13 +137,18 @@ class NCSCase:
                         return True, None
 
     async def run(self, stdout=True, stderr=True):
+        
         # todo use docker container
         if self._container is not None:
             raise SandboxError('Container already exists!')
         # Build command
+
+        gpu_id = None
         if self._dataset["problem_index"] == 29:
-            command = 'python3 exp_lenet300100_3.py {parameters}'.format(
+            gpu_id = await allocate_GPU()
+            command = 'python3 exp_lenet300100_3.py -g {gpu} {parameters}'.format(
                 # program=os.path.join(SANDBOX_TMP_DIR, 'algorithm_ncs','ncs_client.py'),
+                gpu = gpu_id,
                 parameters=self.parameters
             )
             # command = 'nvidia-smi'
@@ -170,6 +198,9 @@ class NCSCase:
             }
         )
         timedout, response = await self._wait_container()
+        if gpu_id not None:
+            release_GPU(gpu_id)
+
         statuscode = -1
         if timedout:
             try:
