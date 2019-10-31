@@ -13,9 +13,14 @@ import msg_types
 from errors import *
 from ie import estimate_async, SolutionError
 
-IMAGE_NAME = 'carp_judge'
-TMP_DIR = '/tmp/carp_judge'
-SANDBOX_TMP_DIR = '/workspace'
+
+IMAGE_NAME = 'cs303/oj_worker:v1'
+TMP_DIR = '/tmp/cs303/oj_worker/parameter'
+SANDBOX_TMP_DIR = '/parameter'
+
+WORKING_DIR = '/home/zhaoy/ncs_dev/carp_judge_worker/'
+SANDBOX_WORKING_DIR = '/workspace'
+
 
 if not os.path.exists(TMP_DIR):
     os.makedirs(TMP_DIR, exist_ok=True)
