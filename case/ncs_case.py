@@ -33,6 +33,9 @@ if not os.path.exists(TMP_DIR):
 
 _docker_client = docker.from_env()
 
+import time
+random.seed(int(100*time.time()))
+
 
 def id_generator(size=8, chars=string.ascii_letters + string.digits):
     return ''.join(random.choice(chars) for _ in range(size))
