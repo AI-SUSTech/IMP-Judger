@@ -1,5 +1,6 @@
 import json
-import logging
+from logzero import logger
+# import logger
 import coloredlogs
 import asyncio
 import aiohttp
@@ -36,7 +37,7 @@ async def __message_handler():
                 obj = {'uid': uid, 'type': WORKER_INFO, 'maxTasks': config.parallel_judge_tasks}
                 await send_queue.put(json.dumps(obj))
         except Exception as e:
-            logging.error(e)
+            logger.error(e)
 
 
 async def __judge_worker(idx):
@@ -48,9 +49,9 @@ async def __judge_worker(idx):
             data = base64.b64decode(obj['data'])
             ctype = obj['type']
             dataset = obj['dataset']
-            logging.info('Enter judge for id: ' + cid)
+            logger.info('Enter judge for id: ' + cid)
             with CARPCase(data, cid, ctype, dataset) as case:
-                logging.info('[{}]({}) Start judge'.format(idx, cid))
+                logger.info('[{}]({}) Start judge'.format(idx, cid))
                 obj = {
                     'type': CASE_START,
                     'cid': cid,
@@ -58,7 +59,7 @@ async def __judge_worker(idx):
                 }
                 await send_queue.put(json.dumps(obj))
                 timedout, stdout, stderr, exitcode = await case.run(stdout=True, stderr=True)
-                logging.info('[{}]({}) Judge finished: {}, {}'.format(idx, cid, timedout, exitcode))
+                logger.info('[{}]({}) Judge finished: {}, {}'.format(idx, cid, timedout, exitcode))
                 stdout_overflow = False
                 stderr_overflow = False
                 stdout = stdout.decode('utf8')
@@ -92,9 +93,9 @@ async def __judge_worker(idx):
                 }
                 await send_queue.put(json.dumps(ret))
         except ArchiveError as e:
-            logging.error('[{}] {}'.format(idx, e))
+            logger.error('[{}] {}'.format(idx, e))
         except Exception as e:
-            logging.error('[{}] {}'.format(idx, e))
+            logger.error('[{}] {}'.format(idx, e))
             traceback.print_exc()
             ret = {
                 'cid': cid,
@@ -129,7 +130,7 @@ async def main():
         try:
             uid = None
             # Auth with server
-            logging.info('Logging in with username ' + config.username)
+            logger.info('logger in with username ' + config.username)
             timeout = aiohttp.ClientTimeout(total=10)
             cookie = None
             async with aiohttp.ClientSession(timeout=timeout) as session:
@@ -149,24 +150,24 @@ async def main():
                                     obj = await resp.json()
                                     if resp.status == 200:
                                         if obj['type'] != 300:
-                                            logging.error('Invalid worker account!')
+                                            logger.error('Invalid worker account!')
                                             return
                                         uid = obj['uid']
                                     else:
-                                        logging.error('[{}] {}'.format(resp.status, obj['message']))
+                                        logger.error('[{}] {}'.format(resp.status, obj['message']))
                                         await asyncio.sleep(5)
                             else:
-                                logging.error('[{}] {}'.format(resp.status, obj['message']))
+                                logger.error('[{}] {}'.format(resp.status, obj['message']))
                                 await asyncio.sleep(5)
                     except Exception as e:
-                        logging.error('Connection failed: ' + repr(e))
+                        logger.error('Connection failed: ' + repr(e))
                         await asyncio.sleep(5)
-            logging.info('Logged in as ' + uid)
-            logging.info('Cookie: ' + cookie)
-            logging.info('Connecting to ' + config.websocket_url)
+            logger.info('Logged in as ' + uid)
+            logger.info('Cookie: ' + cookie)
+            logger.info('Connecting to ' + config.websocket_url)
             headers = {'Cookie': cookie}
             async with websockets.connect(config.websocket_url, extra_headers=headers, max_size=2 ** 24) as ws:
-                logging.info('Connected')
+                logger.info('Connected')
                 # Create tasks
                 handler_task = asyncio.ensure_future(__message_handler())
                 dispatcher_task = asyncio.ensure_future(__message_dispatcher(ws))
@@ -183,10 +184,10 @@ async def main():
                 for task in pending:
                     task.cancel()
         except Exception as e:
-            logging.error(str(type(e)))
+            logger.error(str(type(e)))
             raise e
         finally:
-            logging.error('Disconnected, retry after 5 secs')
+            logger.error('Disconnected, retry after 5 secs')
             await asyncio.sleep(5.0)
 
 
