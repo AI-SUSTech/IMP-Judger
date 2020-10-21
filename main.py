@@ -152,7 +152,7 @@ async def main():
                                         if obj['type'] != 300:
                                             logger.error('Invalid worker account!')
                                             return
-                                        uid = obj['uid']
+                                        uid = obj['uid'] 
                                     else:
                                         logger.error('[{}] {}'.format(resp.status, obj['message']))
                                         await asyncio.sleep(5)
