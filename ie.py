@@ -190,6 +190,7 @@ def read_seed (fd, seed_count, graph):
         err = SolutionError()
         err.set_reason("Wrong number of seeds")
         raise err
+    seeds.sort()
     return seeds
 
 def chunks(arr, m):
