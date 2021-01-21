@@ -89,6 +89,8 @@ class CARPCase:
         # Find program and data
         program_files = []
         data_files = []
+        from logzero import logger
+        logger.info(filelist)
         for item in filelist:
             if item.startswith('program/') and item != 'program/':
                 program_files.append(item)
